@@ -31,24 +31,36 @@ Authors: [Ruopeng Gao](https://ruopenggao.com), [Limin Wang](https://wanglimin.g
 
 ## Installation
 
+### Install with conda
 ```shell
-conda create -n MeMOTR python=3.10  # create a virtual env
-# I remember that I use some new features in Python 3.10, but I'm not exactly sure about this.
-conda activate MeMOTR               # activate the env
-conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.7 -c pytorch -c nvidia
-# Our code is primarily running on PyTorch 1.13.1, 
-# but it should be also compatible with earlier PyTorch versions (e.g., 1.12.1).
-# However, too early pytorch version may cause some issue that need to be fixed, as we use some newly proposed feature of pytorch (e.g., ResNet50_Weights).
-conda install matplotlib pyyaml scipy tqdm tensorboard
+conda create -n sambamotr -y python=3.11  # create a virtual env
+conda activate sambamotr               # activate the env
+conda install -y pytorch==2.1.2 torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
+conda install -y matplotlib pyyaml scipy tqdm tensorboard
 pip install opencv-python
 ```
+
+### Install with venv (alternative)
+```shell
+python -m venv venv/sambamotr
+export PYTHONPATH=venv/sambamotr/bin/python
+source venv/sambamotr/bin/activate
+
+pip install torch==2.1.2 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+pip install matplotlib pyyaml scipy tqdm tensorboard
+pip install opencv-python
+```
+
+### Build Deformable Attention CUDA ops
 
 You also need to compile the Deformable Attention CUDA ops:
 
 ```shell
 # From https://github.com/fundamentalvision/Deformable-DETR
 cd ./models/ops/
-sh make.sh
+# Build for different CUDA architectures (refer to https://arnon.dk/matching-sm-architectures-arch-and-gencode-for-various-nvidia-cards/)
+# TORCH_CUDA_ARCH_LIST="7.5 8.0 8.6 8.7 8.9" sh make.sh
+TORCH_CUDA_ARCH_LIST="7.5 8.0 8.6" sh make.sh
 # You can test this ops if you need:
 python test.py
 ```
@@ -172,7 +184,7 @@ You can replace the `--config-path` in [DanceTrack Scripts](#scripts-on-dancetra
 
 ## Contact
 
-- Ruopeng Gao: ruopenggao@gmail.com
+- Mattia Segu: mattia.segu@gmail.com
 
 ## Citation
 ```bibtex
@@ -195,6 +207,5 @@ You can replace the `--config-path` in [DanceTrack Scripts](#scripts-on-dancetra
 - [Deformable DETR](https://github.com/fundamentalvision/Deformable-DETR)
 - [DAB DETR](https://github.com/IDEA-Research/DAB-DETR)
 - [MOTR](https://github.com/megvii-research/MOTR)
+- [MeMOTR](https://github.com/MCG-NJU/MeMOTR)
 - [TrackEval](https://github.com/JonathonLuiten/TrackEval)
-- [CV-Framework](https://github.com/HELLORPG/CV-Framework)
-- [Star History](https://star-history.com/)

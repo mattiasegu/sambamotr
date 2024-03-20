@@ -61,7 +61,7 @@ USE_DAB: True
 UPDATE_THRESH: 0.5
 LONG_MEMORY_LAMBDA: 0.01
 
-PRETRAINED_MODEL: dab_deformable_detr.pth
+PRETRAINED_MODEL: pretrained/dab_deformable_detr.pth
 
 SAMPLE_STEPS: [6, 10]
 SAMPLE_LENGTHS: [2, 3, 4]
