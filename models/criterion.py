@@ -439,6 +439,15 @@ class ClipCriterion:
         return loss_l1, loss_giou
 
 
+class SambaClipCriterion(ClipCriterion):
+    def __init__(self, *args, **kwargs):
+        """
+        Init a criterion function.
+        """
+        super().__init__(*args, **kwargs)
+        # TODO
+
+
 def sigmoid_focal_loss(inputs, targets, alpha: float = 0.25, gamma: float = 2):
     """
     Loss used in RetinaNet for dense detection: https://arxiv.org/abs/1708.02002.
@@ -475,20 +484,42 @@ def build(config: dict):
         "MOT17_SPLIT": 1,
         "BDD100K": 8,
     }
-    return ClipCriterion(
-        num_classes=dataset_num_classes[config["DATASET"]],
-        matcher=build_matcher(config=config),
-        n_det_queries=config["NUM_DET_QUERIES"],
-        aux_loss=config["AUX_LOSS"],
-        weight={
-            "box_l1_loss": config["LOSS_WEIGHT_L1"],
-            "box_giou_loss": config["LOSS_WEIGHT_GIOU"],
-            "label_focal_loss": config["LOSS_WEIGHT_FOCAL"]
-        },
-        max_frame_length=max(config["SAMPLE_LENGTHS"]),
-        n_aux=config["NUM_DEC_LAYERS"]-1,
-        merge_det_track_layer=(0 if "MERGE_DET_TRACK_LAYER" not in config else config["MERGE_DET_TRACK_LAYER"]),
-        aux_weights=config["AUX_LOSS_WEIGHT"],
-        hidden_dim=config["HIDDEN_DIM"],
-        use_dab=config["USE_DAB"]
-    )
+    if config["CRITERION"] == "ClipCriterion":
+        return ClipCriterion(
+            num_classes=dataset_num_classes[config["DATASET"]],
+            matcher=build_matcher(config=config),
+            n_det_queries=config["NUM_DET_QUERIES"],
+            aux_loss=config["AUX_LOSS"],
+            weight={
+                "box_l1_loss": config["LOSS_WEIGHT_L1"],
+                "box_giou_loss": config["LOSS_WEIGHT_GIOU"],
+                "label_focal_loss": config["LOSS_WEIGHT_FOCAL"]
+            },
+            max_frame_length=max(config["SAMPLE_LENGTHS"]),
+            n_aux=config["NUM_DEC_LAYERS"]-1,
+            merge_det_track_layer=(0 if "MERGE_DET_TRACK_LAYER" not in config else config["MERGE_DET_TRACK_LAYER"]),
+            aux_weights=config["AUX_LOSS_WEIGHT"],
+            hidden_dim=config["HIDDEN_DIM"],
+            use_dab=config["USE_DAB"]
+        )
+    elif config["CRITERION"] == "SambaClipCriterion":
+        return SambaClipCriterion(
+            num_classes=dataset_num_classes[config["DATASET"]],
+            matcher=build_matcher(config=config),
+            n_det_queries=config["NUM_DET_QUERIES"],
+            aux_loss=config["AUX_LOSS"],
+            weight={
+                "box_l1_loss": config["LOSS_WEIGHT_L1"],
+                "box_giou_loss": config["LOSS_WEIGHT_GIOU"],
+                "label_focal_loss": config["LOSS_WEIGHT_FOCAL"]
+            },
+            max_frame_length=max(config["SAMPLE_LENGTHS"]),
+            n_aux=config["NUM_DEC_LAYERS"]-1,
+            merge_det_track_layer=(0 if "MERGE_DET_TRACK_LAYER" not in config else config["MERGE_DET_TRACK_LAYER"]),
+            aux_weights=config["AUX_LOSS_WEIGHT"],
+            hidden_dim=config["HIDDEN_DIM"],
+            use_dab=config["USE_DAB"]
+        )
+    else:
+        ValueError(f"Do not support criterion '{config['CRITERION']}'")
+

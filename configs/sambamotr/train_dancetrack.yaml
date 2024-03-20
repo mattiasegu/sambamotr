@@ -109,3 +109,10 @@ LOSS_WEIGHT_L1: 5
 LOSS_WEIGHT_GIOU: 2
 # Aux Loss Weight
 AUX_LOSS_WEIGHT: [1.0, 1.0, 1.0, 1.0, 1.0]
+
+# Criterion
+CRITERION: SambaClipCriterion
+# Model
+MODEL: SambaMOTR
+# Query Updater
+QUERY_UPDATER: SambaQueryUpdater

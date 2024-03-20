@@ -287,6 +287,15 @@ class MeMOTR(nn.Module):
         return self.query_updater(previous_tracks, new_tracks, unmatched_dets, no_augment)
 
 
+class SambaMOTR(MeMOTR):
+    def __init__(self, *args, **kwargs):
+        """
+        Init a model.
+        """
+        super().__init__(*args, **kwargs)
+        # TODO
+
+
 def build(config: dict):
     dataset_num_classes = {
         "DanceTrack": 1,
@@ -302,20 +311,42 @@ def build(config: dict):
     deformable_transformer = build_deformable_transformer(config=config)
     query_updater = build_query_updater(config=config)
 
-    return MeMOTR(
-        backbone=backbone_with_pe,
-        transformer=deformable_transformer,
-        query_updater=query_updater,
-        num_classes=num_classes,
-        n_det_queries=config["NUM_DET_QUERIES"],
-        n_feature_levels=config["NUM_FEATURE_LEVELS"],
-        hidden_dim=config["HIDDEN_DIM"],
-        ffn_dim=config["FFN_DIM"],
-        dropout=config["DROPOUT"],
-        aux_loss=True,
-        with_box_refine=True,
-        use_checkpoint=config["USE_CHECKPOINT"],
-        checkpoint_level=config["CHECKPOINT_LEVEL"],
-        use_dab=config["USE_DAB"],
-        visualize=config["VISUALIZE"]
-    )
+    if config["MODEL"] == "MeMOTR":
+        return MeMOTR(
+            backbone=backbone_with_pe,
+            transformer=deformable_transformer,
+            query_updater=query_updater,
+            num_classes=num_classes,
+            n_det_queries=config["NUM_DET_QUERIES"],
+            n_feature_levels=config["NUM_FEATURE_LEVELS"],
+            hidden_dim=config["HIDDEN_DIM"],
+            ffn_dim=config["FFN_DIM"],
+            dropout=config["DROPOUT"],
+            aux_loss=True,
+            with_box_refine=True,
+            use_checkpoint=config["USE_CHECKPOINT"],
+            checkpoint_level=config["CHECKPOINT_LEVEL"],
+            use_dab=config["USE_DAB"],
+            visualize=config["VISUALIZE"]
+        )
+    elif config["MODEL"] == "SambaMOTR":
+        return SambaMOTR(
+            backbone=backbone_with_pe,
+            transformer=deformable_transformer,
+            query_updater=query_updater,
+            num_classes=num_classes,
+            n_det_queries=config["NUM_DET_QUERIES"],
+            n_feature_levels=config["NUM_FEATURE_LEVELS"],
+            hidden_dim=config["HIDDEN_DIM"],
+            ffn_dim=config["FFN_DIM"],
+            dropout=config["DROPOUT"],
+            aux_loss=True,
+            with_box_refine=True,
+            use_checkpoint=config["USE_CHECKPOINT"],
+            checkpoint_level=config["CHECKPOINT_LEVEL"],
+            use_dab=config["USE_DAB"],
+            visualize=config["VISUALIZE"]
+        )
+    else:
+        ValueError(f"Do not support model '{config['MODEL']}'")
+

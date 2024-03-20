@@ -1,8 +1,8 @@
 #!/bin/bash
 
 JOB_NAME=debug_memotr_dancetrack
-CONFIG=./configs/train_dancetrack.yaml
-OUT_DIR=./outputs/${JOB_NAME}/
+CONFIG=./configs/sambamotr/train_dancetrack.yaml
+OUT_DIR=./outputs/tmp/${JOB_NAME}/
 BS=1 
 DATA_ROOT=/BS/diffusion-track/nobackup/data/mot/
 
@@ -14,9 +14,19 @@ else
      CMD=tools/main.sh
 fi
 
+
 python -m debugpy --listen $HOSTNAME:5678 --wait-for-client main.py \
      --config-path ${CONFIG} \
      --outputs-dir ${OUT_DIR} \
      --batch-size ${BS} \
-     --data-root ${DATA_ROOT} \
-     --use-checkpoint
+     --data-root ${DATA_ROOT}
+     # --use-checkpoint
+
+
+# tools/main.sh \
+#     ${GPUS} \
+#      --config-path ${CONFIG} \
+#      --outputs-dir ${OUT_DIR} \
+#      --batch-size ${BS} \
+#      --data-root ${DATA_ROOT}
+#      # --use-checkpoint

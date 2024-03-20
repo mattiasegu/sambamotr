@@ -253,19 +253,44 @@ class QueryUpdater(nn.Module):
             active_tracks = active_tracks[active_tracks.ids >= 0]
             tracks.append(active_tracks)
         return tracks
+    
+
+class SambaQueryUpdater(QueryUpdater):
+    def __init__(self, *args, **kwargs):
+        """
+        Init a query updater.
+        """
+        super().__init__(*args, **kwargs)
+        # TODO
 
 
 def build(config: dict):
-    return QueryUpdater(
-            hidden_dim=config["HIDDEN_DIM"],
-            ffn_dim=config["FFN_DIM"],
-            dropout=config["DROPOUT"],
-            tp_drop_ratio=config["TP_DROP_RATE"] if "TP_DROP_RATE" in config else 0.0,
-            fp_insert_ratio=config["FP_INSERT_RATE"] if "FP_INSERT_RATE" in config else 0.0,
-            use_checkpoint=config["USE_CHECKPOINT"],
-            use_dab=config["USE_DAB"],
-            update_threshold=config["UPDATE_THRESH"],
-            long_memory_lambda=config["LONG_MEMORY_LAMBDA"],
-            visualize=config["VISUALIZE"]
-        )
+    if config["QUERY_UPDATER"] == "QueryUpdater":
+        return QueryUpdater(
+                hidden_dim=config["HIDDEN_DIM"],
+                ffn_dim=config["FFN_DIM"],
+                dropout=config["DROPOUT"],
+                tp_drop_ratio=config["TP_DROP_RATE"] if "TP_DROP_RATE" in config else 0.0,
+                fp_insert_ratio=config["FP_INSERT_RATE"] if "FP_INSERT_RATE" in config else 0.0,
+                use_checkpoint=config["USE_CHECKPOINT"],
+                use_dab=config["USE_DAB"],
+                update_threshold=config["UPDATE_THRESH"],
+                long_memory_lambda=config["LONG_MEMORY_LAMBDA"],
+                visualize=config["VISUALIZE"]
+            )
+    elif config["QUERY_UPDATER"] == "SambaQueryUpdater":
+        return SambaQueryUpdater(
+                hidden_dim=config["HIDDEN_DIM"],
+                ffn_dim=config["FFN_DIM"],
+                dropout=config["DROPOUT"],
+                tp_drop_ratio=config["TP_DROP_RATE"] if "TP_DROP_RATE" in config else 0.0,
+                fp_insert_ratio=config["FP_INSERT_RATE"] if "FP_INSERT_RATE" in config else 0.0,
+                use_checkpoint=config["USE_CHECKPOINT"],
+                use_dab=config["USE_DAB"],
+                update_threshold=config["UPDATE_THRESH"],
+                long_memory_lambda=config["LONG_MEMORY_LAMBDA"],
+                visualize=config["VISUALIZE"]
+            )
+    else:
+        ValueError(f"Do not support query updater '{config['QUERY_UPDATER']}'")
 
