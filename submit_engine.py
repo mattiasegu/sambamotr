@@ -59,6 +59,10 @@ class Submitter:
     def run(self):
         tracks = [TrackInstances(hidden_dim=get_model(self.model).hidden_dim,
                                  num_classes=get_model(self.model).num_classes,
+                                 state_dim=get_model(self.model).query_updater.state_dim,
+                                 expand=get_model(self.model).query_updater.expand,
+                                 num_layers=get_model(self.model).query_updater.num_layers,
+                                 conv_dim=get_model(self.model).query_updater.conv_dim,
                                  use_dab=self.use_dab).to(self.device)]
         bdd100k_results = []    # for bdd100k, will be converted into json file, different from other datasets.
         for i, ((image, ori_image), info) in enumerate(tqdm(self.dataloader, desc=f"Submit seq: {self.seq_name}")):
@@ -68,7 +72,7 @@ class Submitter:
             previous_tracks, new_tracks = self.tracker.update(
                 model_outputs=res,
                 tracks=tracks
-            )
+            )  # TODO: check tracks usage
             tracks: List[TrackInstances] = get_model(self.model).postprocess_single_frame(previous_tracks, new_tracks, None)
 
             # We do not use this...

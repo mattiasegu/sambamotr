@@ -9,11 +9,17 @@ class TrackInstances:
     Tracked Instances.
     """
     def __init__(self, frame_height: float = 1.0, frame_width: float = 1.0,
-                 hidden_dim: int = 256, num_classes: int = 1, use_dab: bool = False):
+                 hidden_dim: int = 256, num_classes: int = 1, state_dim: int = 8,
+                 expand: int = 2, num_layers: int = 2, conv_dim: int = 4,
+                 use_dab: bool = False):
         self.use_dab = use_dab
         self.frame_height = frame_height
         self.frame_width = frame_width
         self.hidden_dim = hidden_dim
+        self.state_dim = state_dim
+        self.expand = expand
+        self.num_layers = num_layers
+        self.conv_dim = conv_dim
         self.num_classes = num_classes
         if self.use_dab:
             self.ref_pts = torch.zeros((0, 4))
@@ -36,9 +42,15 @@ class TrackInstances:
         self.long_memory = torch.zeros((0, self.hidden_dim), dtype=torch.float)
         self.last_appear_boxes = torch.zeros((0, 4))
 
+        # Samba
+        self.hidden_state = torch.zeros((0, hidden_dim * expand, state_dim))
+        self.conv_history = torch.zeros((0, num_layers, conv_dim, hidden_dim * expand))
+
     def to(self, device):
         res = TrackInstances(frame_height=self.frame_height, frame_width=self.frame_width,
-                             hidden_dim=self.hidden_dim, num_classes=self.num_classes)
+                             hidden_dim=self.hidden_dim, num_classes=self.num_classes,
+                             state_dim=self.state_dim, expand=self.expand,
+                             num_layers=self.num_layers,  conv_dim=self.conv_dim)
         for k, v in vars(self).items():
             if hasattr(v, "to"):
                 v = v.to(device)
@@ -56,7 +68,9 @@ class TrackInstances:
             else:
                 item = slice(item, None, len(self))
         res = TrackInstances(frame_height=self.frame_height, frame_width=self.frame_width,
-                             hidden_dim=self.hidden_dim, num_classes=self.num_classes)
+                             hidden_dim=self.hidden_dim, num_classes=self.num_classes,
+                             state_dim=self.state_dim, expand=self.expand,
+                             num_layers=self.num_layers, conv_dim=self.conv_dim)
         for k, v in vars(self).items():
             if hasattr(v, "__getitem__") and v.shape[0] != 0:
                 res.__setattr__(k, v[item])
@@ -65,7 +79,9 @@ class TrackInstances:
         return res
 
     @staticmethod
-    def init_tracks(batch: dict, hidden_dim: int, num_classes: int, device="cpu", use_dab: bool = False):
+    def init_tracks(batch: dict, hidden_dim: int, num_classes: int,
+                    state_dim: int, expand: int, num_layers: int, conv_dim: int,
+                    device="cpu", use_dab: bool = False):
         """
         Init tracks for a batch.
         """
@@ -80,7 +96,11 @@ class TrackInstances:
                 frame_width=float(batch["imgs"][i][0].shape[-1] / w_max),
                 hidden_dim=hidden_dim,
                 num_classes=num_classes,
-                use_dab=use_dab
+                state_dim=state_dim,
+                expand=expand,
+                num_layers=num_layers,
+                conv_dim=conv_dim,
+                use_dab=use_dab,
             ).to(device))
         return tracks_list
 
@@ -101,7 +121,11 @@ class TrackInstances:
             "frame_width": [],
             "hidden_dim": [],
             "num_classes": [],
-            "keys": keys
+            "state_dim": [],
+            "expand": [],
+            "num_layers": [],
+            "conv_dim": [],
+            "keys": keys,
         }
         tensors = []
         for b in range(len(tracks)):
@@ -109,6 +133,10 @@ class TrackInstances:
             meta["frame_width"].append(tracks[b].frame_width)
             meta["hidden_dim"].append(tracks[b].hidden_dim)
             meta["num_classes"].append(tracks[b].num_classes)
+            meta["state_dim"].append(tracks[b].state_dim)
+            meta["expand"].append(tracks[b].expand)
+            meta["num_layers"].append(tracks[b].num_layers)
+            meta["conv_dim"].append(tracks[b].conv_dim)
             for k in keys:
                 tensors.append(getattr(tracks[b], k))
         return meta, tensors
@@ -121,7 +149,11 @@ class TrackInstances:
                 frame_height=meta["frame_height"][b],
                 frame_width=meta["frame_width"][b],
                 hidden_dim=meta["hidden_dim"][b],
-                num_classes=meta["num_classes"][b]
+                num_classes=meta["num_classes"][b],
+                state_dim=meta["state_dim"][b],
+                expand=meta["expand"][b],
+                num_layers=meta["num_layers"][b],
+                conv_dim=meta["conv_dim"][b]
             )
             for i, k in enumerate(meta["keys"]):
                 setattr(track, k, tensors[i + b * len(meta["keys"])])

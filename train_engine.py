@@ -192,6 +192,10 @@ def train_one_epoch(model: MeMOTR, train_states: dict, max_norm: float,
         tracks = TrackInstances.init_tracks(batch=batch,
                                             hidden_dim=get_model(model).hidden_dim,
                                             num_classes=get_model(model).num_classes,
+                                            state_dim=get_model(model).query_updater.state_dim,
+                                            expand=get_model(model).query_updater.expand,
+                                            num_layers=get_model(model).query_updater.num_layers,
+                                            conv_dim=get_model(model).query_updater.conv_dim,
                                             device=device, use_dab=use_dab)
         criterion.init_a_clip(batch=batch,
                               hidden_dim=get_model(model).hidden_dim,
@@ -204,15 +208,15 @@ def train_one_epoch(model: MeMOTR, train_states: dict, max_norm: float,
                 for f in frame:
                     f.requires_grad_(False)
                 frame = tensor_list_to_nested_tensor(tensor_list=frame).to(device)
-                res = model(frame=frame, tracks=tracks)
+                res = model(frame=frame, tracks=tracks)  # TODO: check tracks usage
                 previous_tracks, new_tracks, unmatched_dets = criterion.process_single_frame(
                     model_outputs=res,
                     tracked_instances=tracks,
                     frame_idx=frame_idx
-                )
+                )  # TODO: check tracks usage
                 if frame_idx < len(batch["imgs"][0]) - 1:
                     tracks = get_model(model).postprocess_single_frame(
-                        previous_tracks, new_tracks, unmatched_dets)
+                        previous_tracks, new_tracks, unmatched_dets)  # TODO: check tracks usage
             else:
                 with torch.no_grad():
                     frame = [fs[frame_idx] for fs in batch["imgs"]]

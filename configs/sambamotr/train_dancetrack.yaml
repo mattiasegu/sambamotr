@@ -76,6 +76,17 @@ LONG_MEMORY_LAMBDA: 0.01
 # Pretrain model
 PRETRAINED_MODEL: pretrained/dab_deformable_detr.pth
 
+# Samba
+STATE_DIM: 8
+EXPAND: 2
+SAMBA_NUM_LAYERS: 2
+CONV_DIM: 4
+WITH_SELF_ATTN: True
+# other possible ablations: (i) layer type (e.g. S4 or S6)
+# SAMBA_HIDDEN_DIM: 256
+# SAMBA_FFN_DIM: 2048
+# SAMBA_NUM_HEADS: 8
+
 # Sampling setting
 SAMPLE_STEPS: [6, 10, 14]
 SAMPLE_LENGTHS: [2, 3, 4, 5]

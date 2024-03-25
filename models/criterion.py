@@ -503,6 +503,7 @@ def build(config: dict):
             use_dab=config["USE_DAB"]
         )
     elif config["CRITERION"] == "SambaClipCriterion":
+        # TODO: make sure that track hidden state is added everywhere
         return SambaClipCriterion(
             num_classes=dataset_num_classes[config["DATASET"]],
             matcher=build_matcher(config=config),
