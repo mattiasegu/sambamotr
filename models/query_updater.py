@@ -14,6 +14,8 @@ from structures.track_instances import TrackInstances
 from utils.utils import inverse_sigmoid
 from utils.box_ops import box_cxcywh_to_xyxy, box_iou_union
 
+from samba import Samba
+
 
 class QueryUpdater(nn.Module):
     def __init__(self, hidden_dim: int, ffn_dim: int,
@@ -255,7 +257,7 @@ class QueryUpdater(nn.Module):
         return tracks
     
 
-class SambaQueryUpdater(QueryUpdater):
+class SambaQueryUpdater(nn.Module):
     def __init__(self,
                 hidden_dim: int,
                 ffn_dim: int,
@@ -295,6 +297,28 @@ class SambaQueryUpdater(QueryUpdater):
         self.use_dab = use_dab
         self.visualize = visualize
 
+        self.samba = Samba(num_layers=num_layers,
+                           d_model=hidden_dim,
+                           norm_cfg=dict(type='LN'),
+                           layer_cfg = dict(
+                               d_model=hidden_dim,
+                               d_state=state_dim,
+                               expand=expand,
+                               dt_rank='auto',
+                               d_conv=conv_dim,
+                               conv_bias=True,
+                               bias=False,
+                               with_self_attn=True,
+                               self_attn_cfg=dict(
+                                   embed_dims=64, num_heads=8, dropout=0.0),
+                               ffn_cfg=dict(
+                                   embed_dims=64,
+                                   feedforward_channels=256,
+                                   num_fcs=2,
+                                   ffn_drop=0.,
+                                   act_cfg=dict(type='ReLU', inplace=True)),
+                               norm_cfg=dict(type='LN')))
+
         self.update_threshold = update_threshold
         self.long_memory_lambda = long_memory_lambda
 
@@ -326,10 +350,26 @@ class SambaQueryUpdater(QueryUpdater):
 
         self.reset_parameters()
         
+    def reset_parameters(self):
+        for p in self.parameters():
+            if p.dim() > 1:
+                nn.init.xavier_uniform_(p)
+
+    def forward(self,
+                previous_tracks: List[TrackInstances],
+                new_tracks: List[TrackInstances],
+                unmatched_dets: List[TrackInstances] | None,
+                no_augment: bool = False):
+        tracks = self.select_active_tracks(previous_tracks, new_tracks, unmatched_dets, no_augment=no_augment)
+        tracks = self.update_tracks_embedding(tracks=tracks)
+
+        return tracks
+    
     def update_tracks_embedding(self, tracks: List[TrackInstances]):
         for b in range(len(tracks)):
             scores = torch.max(logits_to_scores(logits=tracks[b].logits), dim=1).values
-            is_pos = scores > self.update_threshold
+            # is_pos = scores > self.update_threshold
+            is_pos = scores > 0.0
             if self.visualize:
                 os.makedirs("./outputs/visualize_tmp/query_updater/", exist_ok=True)
                 torch.save(tracks[b].ref_pts.cpu(), "./outputs/visualize_tmp/query_updater/current_ref_pts.tensor")
@@ -346,51 +386,23 @@ class SambaQueryUpdater(QueryUpdater):
                 tracks[b].ref_pts[is_pos] = inverse_sigmoid(tracks[b][is_pos].boxes.detach().clone())
             else:
                 tracks[b].ref_pts[is_pos] = inverse_sigmoid(tracks[b][is_pos].boxes.detach().clone())
+            # TODO: understand why the inverse_sigmoid is done here. is there a sigmoid anywhere else later?
 
-            query_pos = pos_to_pos_embed(tracks[b].ref_pts.sigmoid(), num_pos_feats=self.hidden_dim//2)
+            output_pos = pos_to_pos_embed(tracks[b].ref_pts.sigmoid(), num_pos_feats=self.hidden_dim//2)
             output_embed = tracks[b].output_embed
-            last_output_embed = tracks[b].last_output
-            long_memory = tracks[b].long_memory.detach()
 
-            # Confidence Weight
-            confidence_weight = self.confidence_weight_net(output_embed)
-
-            # Adaptive Aggregation
-            short_memory = self.short_memory_fusion(
-                torch.cat((
-                    confidence_weight * output_embed,
-                    last_output_embed
-                ), dim=-1)
-            )
-
-            # Query Feature Generate
-            query_pos = self.query_pos_head(query_pos)
-            q = short_memory + query_pos
-            k = long_memory + query_pos
-            tgt = output_embed
-            # Attention
-            tgt2 = self.memory_attn(q[None, :], k[None, :], tgt[None, :])[0][0, :]
-            tgt = tgt + self.memory_dropout(tgt2)
-            tgt = self.memory_norm(tgt)
-            tgt = self.memory_ffn(tgt)
-            # Long Memory ResNet
-            query_feat = long_memory + self.query_feat_dropout(tgt)
-            query_feat = self.query_feat_norm(query_feat)
-            query_feat = self.query_feat_ffn(query_feat)
-
-            # Update Long Memory
-            long_memory = (1 - self.long_memory_lambda) * long_memory + \
-                          self.long_memory_lambda * tracks[b].output_embed
-            tracks[b].long_memory = tracks[b].long_memory * ~is_pos.reshape((is_pos.shape[0], 1)) + \
-                                    long_memory * is_pos.reshape((is_pos.shape[0], 1))
-            # Update Last Outputs Embedding
-            tracks[b].last_output = tracks[b].last_output * ~is_pos.reshape((is_pos.shape[0], 1)) + \
-                                    output_embed * is_pos.reshape((is_pos.shape[0], 1))
+            # Samba  # TODO: this should have already the size of num_tracks in the first stop here
+            hidden_state = tracks[b].hidden_state
+            conv_history = tracks[b].conv_history
+            output_embed, hidden_state, conv_history = self.samba(
+                output_embed, hidden_state, conv_history, output_pos)
+            tracks[b].hidden_state = hidden_state
+            tracks[b].conv_history = conv_history
 
             if self.use_dab:
-                tracks[b].query_embed[is_pos] = query_feat[is_pos]
+                tracks[b].query_embed[is_pos] = output_embed[is_pos]
             else:
-                tracks[b].query_embed[:, self.hidden_dim:][is_pos] = query_feat[is_pos]
+                tracks[b].query_embed[:, self.hidden_dim:][is_pos] = output_embed[is_pos]
                 # Update query pos, which is not appeared in DAB-D-DETR framework:
                 new_query_pos = self.linear_pos2(self.activation(self.linear_pos1(output_embed)))
                 query_pos = tracks[b].query_embed[:, :self.hidden_dim]
@@ -465,8 +477,10 @@ class SambaQueryUpdater(QueryUpdater):
 
                 if len(active_tracks) == 0:
                     device = next(self.query_feat_ffn.parameters()).device
-                    fake_tracks = TrackInstances(frame_height=1.0, frame_width=1.0, hidden_dim=self.hidden_dim).to(
-                        device=device)
+                    fake_tracks = TrackInstances(frame_height=1.0, frame_width=1.0, hidden_dim=self.hidden_dim,
+                                                 state_dim=self.state_dim, expand=self.expand,
+                                                 num_layers=self.num_layers, conv_dim=self.conv_dim
+                                                 ).to(device=device)
                     if self.use_dab:
                         fake_tracks.query_embed = torch.randn((1, self.hidden_dim), dtype=torch.float,
                                                               device=device)
@@ -485,6 +499,10 @@ class SambaQueryUpdater(QueryUpdater):
                     fake_tracks.iou = torch.zeros((1,), dtype=torch.float, device=device)
                     fake_tracks.last_output = torch.randn((1, self.hidden_dim), dtype=torch.float, device=device)
                     fake_tracks.long_memory = torch.randn((1, self.hidden_dim), dtype=torch.float, device=device)
+                    # Samba
+                    fake_tracks.hidden_state = torch.zeros((1, self.hidden_dim * self.expand, self.state_dim), dtype=torch.float)
+                    fake_tracks.conv_history = torch.zeros((1, self.num_layers, self.conv_dim, self.hidden_dim * self.expand), dtype=torch.float)
+
                     active_tracks = fake_tracks
                 tracks.append(active_tracks)
         else:

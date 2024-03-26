@@ -26,7 +26,8 @@ from utils.utils import is_distributed, distributed_world_size
 class ClipCriterion:
     def __init__(self, num_classes, matcher: HungarianMatcher, n_det_queries, aux_loss: bool, weight: dict,
                  max_frame_length: int, n_aux: int, merge_det_track_layer: int = 0, aux_weights: List = None,
-                 hidden_dim: int = 256, use_dab: bool = True):
+                 hidden_dim: int = 256, state_dim: int = 8, expand: int = 2, num_layers: int = 2,
+                 conv_dim: int = 4, use_dab: bool = True):
         """
         Init a criterion function.
 
@@ -51,6 +52,11 @@ class ClipCriterion:
         self.hidden_dim = hidden_dim
         self.merge_det_track_layer = merge_det_track_layer
 
+        self.state_dim = state_dim
+        self.expand = expand
+        self.num_layers = num_layers
+        self.conv_dim = conv_dim
+
         self.gt_trackinstances_list: None | List[List[TrackInstances]] = None     # (clip_size, B)
         self.loss = {}
         self.log = {}
@@ -59,7 +65,8 @@ class ClipCriterion:
     def set_device(self, device: torch.device):
         self.device = device
 
-    def init_a_clip(self, batch: Dict, hidden_dim: int, num_classes: int, device: torch.device):
+    def init_a_clip(self, batch: Dict, hidden_dim: int, num_classes: int, state_dim: int, 
+                    expand: int, num_layers: int, conv_dim: int, device: torch.device):
         """
         Init this function for a specific clip.
         Args:
@@ -74,8 +81,14 @@ class ClipCriterion:
         batch_size = len(batch["imgs"])
         self.gt_trackinstances_list = []
         for c in range(clip_size):
-            gt_trackinstances = TrackInstances.init_tracks(batch, hidden_dim=hidden_dim,
-                                                           num_classes=num_classes, device=self.device)
+            gt_trackinstances = TrackInstances.init_tracks(batch,
+                                                hidden_dim=hidden_dim,
+                                                num_classes=num_classes,
+                                                state_dim=state_dim,
+                                                expand=expand,
+                                                num_layers=num_layers,
+                                                conv_dim=conv_dim,
+                                                device=self.device)
             for b in range(batch_size):
                 gt_trackinstances[b].ids = batch["infos"][b][c]["ids"]
                 gt_trackinstances[b].labels = batch["infos"][b][c]["labels"]
@@ -153,6 +166,7 @@ class ClipCriterion:
         # 2. Update the already tracked instances.
         tracked_instances = self.update_tracked_instances(model_outputs=model_outputs,
                                                           tracked_instances=tracked_instances)
+        # TODO: samba fix?
 
         # 3. Get the detection results in current frame.
         detection_res = {
@@ -212,7 +226,11 @@ class ClipCriterion:
             trackinstances = TrackInstances(frame_height=tracked_instances[b].frame_height,
                                             frame_width=tracked_instances[b].frame_width,
                                             hidden_dim=tracked_instances[b].hidden_dim,
-                                            num_classes=self.num_classes)
+                                            num_classes=self.num_classes,
+                                            state_dim=self.state_dim,
+                                            expand=self.expand,
+                                            num_layers=self.num_layers,
+                                            conv_dim=self.conv_dim)
             output_idx, gt_idx = matcher_res[b]
             gt_ids = untracked_gt_trackinstances[b].ids[gt_idx]
             gt_idx = torch.as_tensor([gt_ids_to_idx[b][gt_id.item()] for gt_id in gt_ids], dtype=torch.long)
@@ -233,6 +251,7 @@ class ClipCriterion:
             trackinstances.output_embed = model_outputs["outputs"][b][output_idx]
             trackinstances.boxes = model_outputs["pred_bboxes"][b][output_idx]
             trackinstances.logits = model_outputs["pred_logits"][b][output_idx]
+            # TODO: samba fix. till now empty hidden state and conv_history
             trackinstances.iou = torch.zeros((len(gt_idx),), dtype=torch.float)
             trackinstances = trackinstances.to(self.device)
             new_trackinstances.append(trackinstances)
@@ -329,6 +348,8 @@ class ClipCriterion:
             detections.output_embed = model_outputs["outputs"][b][unmatched_indexes]
             detections.logits = model_outputs["pred_logits"][b][unmatched_indexes]
             detections.boxes = model_outputs["pred_bboxes"][b][unmatched_indexes]
+            # TODO: samba fix
+
             # detections.query_embed = model_outputs["aux_outputs"][-1]["queries"][b][unmatched_indexes]
             if self.use_dab:
                 detections.query_embed = model_outputs["aux_outputs"][-1]["queries"][b][unmatched_indexes]
@@ -383,6 +404,7 @@ class ClipCriterion:
                 tracked_instances[b].output_embed = model_outputs["outputs"][b][self.n_det_queries:][~track_mask]
                 tracked_instances[b].matched_idx = torch.zeros((0, ), dtype=tracked_instances[b].matched_idx.dtype)
                 tracked_instances[b].labels = torch.zeros((0, ), dtype=tracked_instances[b].matched_idx.dtype)
+                # TODO: samba fix, add new hidden_state and conv_history? or are they modified in place?
         return tracked_instances
 
     def get_loss_label(self, outputs, gt_trackinstances: List[TrackInstances], idx_to_gts_idx):

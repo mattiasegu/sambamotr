@@ -43,8 +43,8 @@ class TrackInstances:
         self.last_appear_boxes = torch.zeros((0, 4))
 
         # Samba
-        self.hidden_state = torch.zeros((0, hidden_dim * expand, state_dim))
-        self.conv_history = torch.zeros((0, num_layers, conv_dim, hidden_dim * expand))
+        self.hidden_state = torch.zeros((0, hidden_dim * expand, state_dim), dtype=torch.float)
+        self.conv_history = torch.zeros((0, num_layers, conv_dim, hidden_dim * expand), dtype=torch.float)
 
     def to(self, device):
         res = TrackInstances(frame_height=self.frame_height, frame_width=self.frame_width,

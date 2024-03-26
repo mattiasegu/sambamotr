@@ -200,6 +200,10 @@ def train_one_epoch(model: MeMOTR, train_states: dict, max_norm: float,
         criterion.init_a_clip(batch=batch,
                               hidden_dim=get_model(model).hidden_dim,
                               num_classes=get_model(model).num_classes,
+                              state_dim=get_model(model).query_updater.state_dim,
+                              expand=get_model(model).query_updater.expand,
+                              num_layers=get_model(model).query_updater.num_layers,
+                              conv_dim=get_model(model).query_updater.conv_dim,
                               device=device)
 
         for frame_idx in range(len(batch["imgs"][0])):
@@ -208,7 +212,7 @@ def train_one_epoch(model: MeMOTR, train_states: dict, max_norm: float,
                 for f in frame:
                     f.requires_grad_(False)
                 frame = tensor_list_to_nested_tensor(tensor_list=frame).to(device)
-                res = model(frame=frame, tracks=tracks)  # TODO: check tracks usage
+                res = model(frame=frame, tracks=tracks)
                 previous_tracks, new_tracks, unmatched_dets = criterion.process_single_frame(
                     model_outputs=res,
                     tracked_instances=tracks,

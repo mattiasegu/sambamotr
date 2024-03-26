@@ -63,10 +63,6 @@ class SambaBlock(nn.Module):
         bias (bool): whether linear layers have bias term. Defaults to True.
         with_self_attn (bool): whether to use self attention layers to
             syncronize multiple Mamba instances. Defaults to True.
-        with_ffn (bool): whether to use a feed-forward network after
-            self attention. Defaults to True.
-        with_norm (bool): whether to normalize the outputs of self attention
-            and feed-forward network according to norm_cfg. Defaults to True.
         self_attn_cfg (:obj:`ConfigDict` or dict, optional):
             Config for self-attention.
         ffn_cfg (:obj:`ConfigDict` or dict, optional): Config for FFN.
@@ -99,8 +95,6 @@ class SambaBlock(nn.Module):
                  conv_bias: bool = True,
                  bias: bool = False,
                  with_self_attn: bool = True,
-                 with_ffn: bool = True,
-                 with_norm: bool = True,
                  self_attn_cfg: OptConfigType = dict(
                      embed_dims=256, num_heads=8, dropout=0.0),
                  ffn_cfg: OptConfigType = dict(
@@ -127,8 +121,6 @@ class SambaBlock(nn.Module):
         self.dt_rank = dt_rank
 
         self.with_self_attn = with_self_attn
-        self.with_ffn = with_ffn
-        self.with_norm = with_norm
 
         self.in_proj = nn.Linear(d_model, d_inner * 2, bias=bias)
 
@@ -160,7 +152,7 @@ class SambaBlock(nn.Module):
             self_attn_cfg.embed_dims *= expansion_factor
             self.self_attn = MultiheadAttention(**self_attn_cfg)
 
-        if with_ffn and ffn_cfg is not None:
+        if ffn_cfg is not None:
             ffn_cfg = ffn_cfg.copy()
             ffn_cfg.embed_dims *= expansion_factor
             ffn_cfg.feedforward_channels *= expansion_factor
@@ -168,7 +160,6 @@ class SambaBlock(nn.Module):
 
         norms_list = [
             build_norm_layer(norm_cfg, d_model * expansion_factor)[1] 
-            if self.with_norm else nn.Identity()
             for _ in range(2)
         ]
         self.norms = ModuleList(norms_list)
@@ -302,9 +293,8 @@ class SambaBlock(nn.Module):
         if self.with_self_attn:
             x = self.self_attn(query=x, key=x, value=x)
             x = self.norms[0](x)
-            if self.with_ffn:
-                x = self.ffn(x)
-                x = self.norms[1](x)
+            x = self.ffn(x)
+            x = self.norms[1](x)
         x = rearrange(x, 'b k (d_in n) -> b k d_in n', d_in=d_in, n=n)
 
         # Predict
@@ -344,8 +334,6 @@ class ResidualBlock(nn.Module):
                  conv_bias: bool = True,
                  bias: bool = False,
                  with_self_attn=True,
-                 with_ffn=True,
-                 with_norm=True,
                  self_attn_cfg: OptConfigType = dict(
                      embed_dims=256, num_heads=8, dropout=0.0),
                  ffn_cfg: OptConfigType = dict(
@@ -366,8 +354,6 @@ class ResidualBlock(nn.Module):
                                 conv_bias,
                                 bias,
                                 with_self_attn,
-                                with_ffn,
-                                with_norm,
                                 self_attn_cfg,
                                 ffn_cfg)
         self.norm = build_norm_layer(norm_cfg, d_model)[1]
@@ -392,7 +378,6 @@ class ResidualBlock(nn.Module):
                 [Norm -> Mamba -> Add] -> [Norm -> Mamba -> Add] -> [Norm -> Mamba -> Add] -> ....
             
         """
-        # TODO: should I do the norm here? it is probably already done elsewhere on the output space (decoder, Samba) so I have removed it from the input here
         outputs, hidden_states, conv_history = self.mixer(inputs, hidden_states, conv_history)  # unlike Mamba, the input is already normalized here
         outputs = outputs + inputs
 
@@ -441,8 +426,6 @@ class Samba(nn.Module):
                      conv_bias=True,
                      bias=False,
                      with_self_attn=True,
-                     with_ffn=True,
-                     with_norm=True,
                      self_attn_cfg=dict(
                          embed_dims=64, num_heads=8, dropout=0.0),
                      ffn_cfg=dict(
