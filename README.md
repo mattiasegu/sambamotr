@@ -36,7 +36,7 @@ Authors: [Ruopeng Gao](https://ruopenggao.com), [Limin Wang](https://wanglimin.g
 conda create -n sambamotr -y python=3.11  # create a virtual env
 conda activate sambamotr               # activate the env
 conda install -y pytorch==2.1.2 torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
-conda install -y matplotlib pyyaml scipy tqdm tensorboard
+conda install -y matplotlib pyyaml scipy tqdm tensorboard einops
 pip install opencv-python
 ```
 
@@ -47,7 +47,7 @@ export PYTHONPATH=venv/sambamotr/bin/python
 source venv/sambamotr/bin/activate
 
 pip install torch==2.1.2 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-pip install matplotlib pyyaml scipy tqdm tensorboard
+pip install matplotlib pyyaml scipy tqdm tensorboard einops
 pip install opencv-python
 ```
 

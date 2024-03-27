@@ -14,7 +14,7 @@ from structures.track_instances import TrackInstances
 from utils.utils import inverse_sigmoid
 from utils.box_ops import box_cxcywh_to_xyxy, box_iou_union
 
-from samba import Samba
+from .samba import Samba
 
 
 class QueryUpdater(nn.Module):
@@ -298,26 +298,24 @@ class SambaQueryUpdater(nn.Module):
         self.visualize = visualize
 
         self.samba = Samba(num_layers=num_layers,
-                           d_model=hidden_dim,
-                           norm_cfg=dict(type='LN'),
-                           layer_cfg = dict(
-                               d_model=hidden_dim,
-                               d_state=state_dim,
-                               expand=expand,
-                               dt_rank='auto',
-                               d_conv=conv_dim,
-                               conv_bias=True,
-                               bias=False,
-                               with_self_attn=True,
-                               self_attn_cfg=dict(
-                                   embed_dims=64, num_heads=8, dropout=0.0),
-                               ffn_cfg=dict(
-                                   embed_dims=64,
-                                   feedforward_channels=256,
-                                   num_fcs=2,
-                                   ffn_drop=0.,
-                                   act_cfg=dict(type='ReLU', inplace=True)),
-                               norm_cfg=dict(type='LN')))
+                            d_model=hidden_dim,
+                            layer_cfg = dict(
+                                d_model=hidden_dim,
+                                d_state=state_dim,
+                                expand=expand,
+                                dt_rank='auto',
+                                d_conv=conv_dim,
+                                conv_bias=True,
+                                bias=False,
+                                with_self_attn=True,
+                                self_attn_cfg=dict(
+                                    embed_dims=hidden_dim, num_heads=8, dropout=0.0),
+                                ffn_cfg=dict(
+                                    embed_dims=hidden_dim,
+                                    feedforward_channels=ffn_dim,
+                                    num_fcs=2,
+                                    ffn_drop=0.,
+                                    act_cfg=dict(type='ReLU', inplace=True))))
 
         self.update_threshold = update_threshold
         self.long_memory_lambda = long_memory_lambda
@@ -389,16 +387,20 @@ class SambaQueryUpdater(nn.Module):
             # TODO: understand why the inverse_sigmoid is done here. is there a sigmoid anywhere else later?
 
             output_pos = pos_to_pos_embed(tracks[b].ref_pts.sigmoid(), num_pos_feats=self.hidden_dim//2)
+            output_pos = self.query_pos_head(output_pos)
             output_embed = tracks[b].output_embed
 
             # Samba  # TODO: this should have already the size of num_tracks in the first stop here
             hidden_state = tracks[b].hidden_state
             conv_history = tracks[b].conv_history
             output_embed, hidden_state, conv_history = self.samba(
-                output_embed, hidden_state, conv_history, output_pos)
-            tracks[b].hidden_state = hidden_state
-            tracks[b].conv_history = conv_history
-
+                output_embed.unsqueeze(0),
+                hidden_state.unsqueeze(0),
+                conv_history.unsqueeze(0),
+                output_pos.unsqueeze(0))
+            tracks[b].hidden_state = hidden_state.squeeze(0)
+            tracks[b].conv_history = conv_history.squeeze(0)
+            output_embed = output_embed.squeeze(0)
             if self.use_dab:
                 tracks[b].query_embed[is_pos] = output_embed[is_pos]
             else:

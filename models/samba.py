@@ -25,21 +25,16 @@ Glossary:
 """
 from __future__ import annotations
 import math
-import json
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import ModuleList
 
-from dataclasses import dataclass
 from einops import rearrange, repeat, einsum
 from typing import Union
 
-from mmcv.cnn import build_norm_layer
-from mmcv.cnn.bricks.transformer import MultiheadAttention, FFN
-from mmdet.registry import MODELS
-from mmdet.utils import OptConfigType
+from .ffn import FFN
 
 
 class SambaBlock(nn.Module):
@@ -66,9 +61,6 @@ class SambaBlock(nn.Module):
         self_attn_cfg (:obj:`ConfigDict` or dict, optional):
             Config for self-attention.
         ffn_cfg (:obj:`ConfigDict` or dict, optional): Config for FFN.
-        norm_cfg (:obj:`ConfigDict` or dict, optional): Config for
-            normalization layers. All the layers will share the same
-            config. Defaults to `RMSN`, following the original Mamba.
 
     Notation:
         n or d_state: latent state dim      (`N` in [1] Algorithm 2)
@@ -95,15 +87,12 @@ class SambaBlock(nn.Module):
                  conv_bias: bool = True,
                  bias: bool = False,
                  with_self_attn: bool = True,
-                 self_attn_cfg: OptConfigType = dict(
+                 self_attn_cfg: dict = dict(
                      embed_dims=256, num_heads=8, dropout=0.0),
-                 ffn_cfg: OptConfigType = dict(
-                     embed_dims=256,  # TODO: expand by d_state factor?
-                     feedforward_channels=1024,  # TODO: expand by d_state factor?
-                     num_fcs=2,
-                     ffn_drop=0.,
-                     act_cfg=dict(type='ReLU', inplace=True)),
-                 norm_cfg: OptConfigType = dict(type='RMSN'),
+                 ffn_cfg: dict = dict(
+                     embed_dims=256,  # gets expanded by d_state factor
+                     feedforward_channels=1024,  # gets expanded by d_state factor
+                     ffn_drop=0.),
         ):
         super().__init__()
         
@@ -149,18 +138,19 @@ class SambaBlock(nn.Module):
         expansion_factor = expand * d_state
         if with_self_attn and self_attn_cfg is not None:
             self_attn_cfg = self_attn_cfg.copy()
-            self_attn_cfg.embed_dims *= expansion_factor
-            self.self_attn = MultiheadAttention(**self_attn_cfg)
-
+            self_attn_cfg['embed_dims'] *= expansion_factor
+            self.self_attn = nn.MultiheadAttention(
+                embed_dim=self_attn_cfg['embed_dims'], num_heads=8, batch_first=True)
         if ffn_cfg is not None:
             ffn_cfg = ffn_cfg.copy()
-            ffn_cfg.embed_dims *= expansion_factor
-            ffn_cfg.feedforward_channels *= expansion_factor
-            self.ffn = FFN(**ffn_cfg)
+            ffn_cfg['embed_dims'] *= expansion_factor
+            ffn_cfg['feedforward_channels'] *= expansion_factor
+            self.ffn = FFN(d_model=ffn_cfg['embed_dims'],
+                           d_ffn=ffn_cfg['feedforward_channels'],
+                           dropout=ffn_cfg['ffn_drop'])
 
         norms_list = [
-            build_norm_layer(norm_cfg, d_model * expansion_factor)[1] 
-            for _ in range(2)
+            nn.LayerNorm(d_model * expansion_factor) for _ in range(2)
         ]
         self.norms = ModuleList(norms_list)
 
@@ -291,7 +281,7 @@ class SambaBlock(nn.Module):
         # Syncronize Mambas
         x = rearrange(x, 'b k d_in n -> b k (d_in n)')
         if self.with_self_attn:
-            x = self.self_attn(query=x, key=x, value=x)
+            x = self.self_attn(query=x, key=x, value=x)[0]
             x = self.norms[0](x)
             x = self.ffn(x)
             x = self.norms[1](x)
@@ -321,9 +311,6 @@ class ResidualBlock(nn.Module):
         self_attn_cfg (:obj:`ConfigDict` or dict, optional):
             Config for self-attention.
         ffn_cfg (:obj:`ConfigDict` or dict, optional): Config for FFN.
-        norm_cfg (:obj:`ConfigDict` or dict, optional): Config for
-            normalization layers. All the layers will share the same
-            config. Defaults to `RMSN`, following the original Mamba.
     """
     def __init__(self, 
                  d_model: int = 256,
@@ -334,15 +321,12 @@ class ResidualBlock(nn.Module):
                  conv_bias: bool = True,
                  bias: bool = False,
                  with_self_attn=True,
-                 self_attn_cfg: OptConfigType = dict(
+                 self_attn_cfg: dict = dict(
                      embed_dims=256, num_heads=8, dropout=0.0),
-                 ffn_cfg: OptConfigType = dict(
-                     embed_dims=256,
-                     feedforward_channels=1024,
-                     num_fcs=2,
-                     ffn_drop=0.,
-                     act_cfg=dict(type='ReLU', inplace=True)),
-                 norm_cfg: OptConfigType = dict(type='RMSN'),
+                 ffn_cfg: dict = dict(
+                     embed_dims=256,  # gets expanded by d_state factor
+                     feedforward_channels=1024,  # gets expanded by d_state factor
+                     ffn_drop=0.),
     ) -> None:
         super().__init__()
 
@@ -356,7 +340,7 @@ class ResidualBlock(nn.Module):
                                 with_self_attn,
                                 self_attn_cfg,
                                 ffn_cfg)
-        self.norm = build_norm_layer(norm_cfg, d_model)[1]
+        self.norm = nn.LayerNorm(d_model)
         
     def forward(self, inputs, hidden_states, conv_history):
         """
@@ -384,7 +368,6 @@ class ResidualBlock(nn.Module):
         return outputs, hidden_states, conv_history
 
 
-@MODELS.register_module()
 class Samba(nn.Module):
     """Full Samba model.
 
@@ -409,15 +392,11 @@ class Samba(nn.Module):
         self_attn_cfg (:obj:`ConfigDict` or dict, optional):
             Config for self-attention.
         ffn_cfg (:obj:`ConfigDict` or dict, optional): Config for FFN.
-        norm_cfg (:obj:`ConfigDict` or dict, optional): Config for
-            normalization layers. All the layers will share the same
-            config. Defaults to `RMSN`, following the original Mamba.
     """
     def __init__(self, 
                  num_layers: int = 2,
-                 norm_cfg: OptConfigType = dict(type='RMSN'),
                  d_model=64,
-                 layer_cfg: OptConfigType = dict(
+                 layer_cfg: dict = dict(
                      d_model=64,
                      d_state=16,
                      expand=2,
@@ -429,19 +408,16 @@ class Samba(nn.Module):
                      self_attn_cfg=dict(
                          embed_dims=64, num_heads=8, dropout=0.0),
                      ffn_cfg=dict(
-                         embed_dims=64,
-                         feedforward_channels=256,
-                         num_fcs=2,
-                         ffn_drop=0.,
-                         act_cfg=dict(type='ReLU', inplace=True)),
-                     norm_cfg=dict(type='RMSN')),
+                         embed_dims=256,  # gets expanded by d_state factor
+                         feedforward_channels=1024,  # gets expanded by d_state factor
+                         ffn_drop=0.)),
         ) -> None:
         super().__init__()
         self.num_layers = num_layers
 
         self.layers = nn.ModuleList([ResidualBlock(**layer_cfg)
                                      for _ in range(num_layers)])
-        self.norm_f = build_norm_layer(norm_cfg, d_model)[1]
+        self.norm_f = nn.LayerNorm(d_model)
 
     def forward(self, query, hidden_states, conv_history, query_pos=None):
         """

@@ -251,8 +251,9 @@ class ClipCriterion:
             trackinstances.output_embed = model_outputs["outputs"][b][output_idx]
             trackinstances.boxes = model_outputs["pred_bboxes"][b][output_idx]
             trackinstances.logits = model_outputs["pred_logits"][b][output_idx]
-            # TODO: samba fix. till now empty hidden state and conv_history
             trackinstances.iou = torch.zeros((len(gt_idx),), dtype=torch.float)
+            trackinstances.hidden_state = torch.zeros((len(gt_idx), self.hidden_dim * self.expand, self.state_dim), dtype=torch.float)
+            trackinstances.conv_history = torch.zeros((len(gt_idx), self.num_layers, self.conv_dim, self.hidden_dim * self.expand), dtype=torch.float)
             trackinstances = trackinstances.to(self.device)
             new_trackinstances.append(trackinstances)
 
@@ -342,14 +343,17 @@ class ClipCriterion:
             unmatched_indexes = torch.as_tensor(unmatched_indexes, dtype=torch.long)
             detections = TrackInstances(
                 hidden_dim=model_outputs["outputs"].shape[-1],
-                num_classes=model_outputs["pred_logits"].shape[-1]
+                num_classes=model_outputs["pred_logits"].shape[-1],
+                state_dim=self.state_dim,
+                expand=self.expand,
+                num_layers=self.num_layers,
+                conv_dim=self.conv_dim,
             ).to(model_outputs["outputs"].device)
             detections.ref_pts = model_outputs["init_ref_pts"][b][unmatched_indexes]
             detections.output_embed = model_outputs["outputs"][b][unmatched_indexes]
             detections.logits = model_outputs["pred_logits"][b][unmatched_indexes]
             detections.boxes = model_outputs["pred_bboxes"][b][unmatched_indexes]
-            # TODO: samba fix
-
+            
             # detections.query_embed = model_outputs["aux_outputs"][-1]["queries"][b][unmatched_indexes]
             if self.use_dab:
                 detections.query_embed = model_outputs["aux_outputs"][-1]["queries"][b][unmatched_indexes]
@@ -364,6 +368,9 @@ class ClipCriterion:
             detections.ids = -torch.ones((len(detections.query_embed),), dtype=torch.long, device=self.device)
             detections.matched_idx = -torch.ones((len(detections.query_embed),), dtype=torch.long, device=self.device)
             detections.iou = torch.zeros((len(detections.ids,)), dtype=torch.float, device=self.device)
+            detections.hidden_state = torch.zeros((len(unmatched_indexes), self.hidden_dim * self.expand, self.state_dim), dtype=torch.float)
+            detections.conv_history = torch.zeros((len(unmatched_indexes), self.num_layers, self.conv_dim, self.hidden_dim * self.expand), dtype=torch.float)
+            detections = detections.to(self.device)
             unmatched_detections.append(detections)
             pass
 
@@ -404,7 +411,7 @@ class ClipCriterion:
                 tracked_instances[b].output_embed = model_outputs["outputs"][b][self.n_det_queries:][~track_mask]
                 tracked_instances[b].matched_idx = torch.zeros((0, ), dtype=tracked_instances[b].matched_idx.dtype)
                 tracked_instances[b].labels = torch.zeros((0, ), dtype=tracked_instances[b].matched_idx.dtype)
-                # TODO: samba fix, add new hidden_state and conv_history? or are they modified in place?
+                # TODO: samba fix, add new hidden_state and conv_history? or are they modified somewhere else?
         return tracked_instances
 
     def get_loss_label(self, outputs, gt_trackinstances: List[TrackInstances], idx_to_gts_idx):
