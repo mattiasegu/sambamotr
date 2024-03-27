@@ -54,6 +54,7 @@ class RuntimeTracker:
                 tracks[0].ids[i] = -1
 
         # Add newborn targets.
+        # TODO: samba fix next
         new_tracks = TrackInstances(hidden_dim=tracks[0].hidden_dim, num_classes=tracks[0].num_classes)
         new_tracks_idxes = torch.max(model_outputs["scores"][0][:n_dets], dim=-1).values >= self.det_score_thresh
         new_tracks.logits = model_outputs["pred_logits"][0][:n_dets][new_tracks_idxes]

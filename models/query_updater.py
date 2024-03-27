@@ -390,7 +390,7 @@ class SambaQueryUpdater(nn.Module):
             output_pos = self.query_pos_head(output_pos)
             output_embed = tracks[b].output_embed
 
-            # Samba  # TODO: this should have already the size of num_tracks in the first stop here
+            # Samba
             hidden_state = tracks[b].hidden_state
             conv_history = tracks[b].conv_history
             output_embed, hidden_state, conv_history = self.samba(

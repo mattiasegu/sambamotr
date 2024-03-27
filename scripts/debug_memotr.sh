@@ -15,12 +15,18 @@ else
 fi
 
 
-python -m debugpy --listen $HOSTNAME:5678 --wait-for-client main.py \
+# python -m debugpy --listen $HOSTNAME:5678 --wait-for-client main.py \
+#      --config-path ${CONFIG} \
+#      --outputs-dir ${OUT_DIR} \
+#      --batch-size ${BS} \
+#      --data-root ${DATA_ROOT}
+
+python main.py \
      --config-path ${CONFIG} \
      --outputs-dir ${OUT_DIR} \
      --batch-size ${BS} \
-     --data-root ${DATA_ROOT}
-     # --use-checkpoint
+     --data-root ${DATA_ROOT} \
+     --use-checkpoint
 
 
 # tools/main.sh \

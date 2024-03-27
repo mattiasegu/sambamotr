@@ -166,7 +166,6 @@ class ClipCriterion:
         # 2. Update the already tracked instances.
         tracked_instances = self.update_tracked_instances(model_outputs=model_outputs,
                                                           tracked_instances=tracked_instances)
-        # TODO: samba fix?
 
         # 3. Get the detection results in current frame.
         detection_res = {
@@ -411,7 +410,6 @@ class ClipCriterion:
                 tracked_instances[b].output_embed = model_outputs["outputs"][b][self.n_det_queries:][~track_mask]
                 tracked_instances[b].matched_idx = torch.zeros((0, ), dtype=tracked_instances[b].matched_idx.dtype)
                 tracked_instances[b].labels = torch.zeros((0, ), dtype=tracked_instances[b].matched_idx.dtype)
-                # TODO: samba fix, add new hidden_state and conv_history? or are they modified somewhere else?
         return tracked_instances
 
     def get_loss_label(self, outputs, gt_trackinstances: List[TrackInstances], idx_to_gts_idx):
@@ -474,7 +472,6 @@ class SambaClipCriterion(ClipCriterion):
         Init a criterion function.
         """
         super().__init__(*args, **kwargs)
-        # TODO
 
 
 def sigmoid_focal_loss(inputs, targets, alpha: float = 0.25, gamma: float = 2):
