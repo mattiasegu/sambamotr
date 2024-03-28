@@ -55,7 +55,12 @@ class RuntimeTracker:
 
         # Add newborn targets.
         # TODO: samba fix next
-        new_tracks = TrackInstances(hidden_dim=tracks[0].hidden_dim, num_classes=tracks[0].num_classes)
+        new_tracks = TrackInstances(hidden_dim=tracks[0].hidden_dim,
+                                    num_classes=tracks[0].num_classes,
+                                    state_dim=tracks[0].state_dim,
+                                    expand=tracks[0].expand,
+                                    num_layers=tracks[0].num_layers,
+                                    conv_dim=tracks[0].conv_dim)
         new_tracks_idxes = torch.max(model_outputs["scores"][0][:n_dets], dim=-1).values >= self.det_score_thresh
         new_tracks.logits = model_outputs["pred_logits"][0][:n_dets][new_tracks_idxes]
         new_tracks.boxes = model_outputs["pred_bboxes"][0][:n_dets][new_tracks_idxes]
@@ -86,6 +91,8 @@ class RuntimeTracker:
             ids.append(self.max_obj_id)
             self.max_obj_id += 1
         new_tracks.ids = torch.as_tensor(ids, dtype=torch.long)
+        new_tracks.hidden_state = torch.zeros((len(new_tracks.logits), tracks[0].hidden_dim * tracks[0].expand, tracks[0].state_dim), dtype=torch.float)
+        new_tracks.conv_history = torch.zeros((len(new_tracks.logits), tracks[0].num_layers, tracks[0].conv_dim, tracks[0].hidden_dim * tracks[0].expand), dtype=torch.float)
         new_tracks = new_tracks.to(new_tracks.logits.device)
         for _ in range(len(new_tracks)):
             self.motions[new_tracks.ids[_].item()] = Motion(
