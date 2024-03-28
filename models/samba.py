@@ -362,7 +362,8 @@ class ResidualBlock(nn.Module):
                 [Norm -> Mamba -> Add] -> [Norm -> Mamba -> Add] -> [Norm -> Mamba -> Add] -> ....
             
         """
-        outputs, hidden_states, conv_history = self.mixer(inputs, hidden_states, conv_history)  # unlike Mamba, the input is already normalized here
+        # TODO: with or without norm?
+        outputs, hidden_states, conv_history = self.mixer(self.norm(inputs), hidden_states, conv_history)
         outputs = outputs + inputs
 
         return outputs, hidden_states, conv_history

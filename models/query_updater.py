@@ -318,21 +318,7 @@ class SambaQueryUpdater(nn.Module):
                                     act_cfg=dict(type='ReLU', inplace=True))))
 
         self.update_threshold = update_threshold
-        self.long_memory_lambda = long_memory_lambda
 
-        self.confidence_weight_net = nn.Sequential(
-            MLP(input_dim=self.hidden_dim, hidden_dim=self.hidden_dim, output_dim=self.hidden_dim, num_layers=2),
-            nn.Sigmoid()
-        )
-        self.short_memory_fusion = MLP(input_dim=2*self.hidden_dim, hidden_dim=2*self.hidden_dim,
-                                       output_dim=self.hidden_dim, num_layers=2)
-        self.memory_attn = nn.MultiheadAttention(embed_dim=self.hidden_dim, num_heads=8, batch_first=True)
-        self.memory_dropout = nn.Dropout(self.dropout)
-        self.memory_norm = nn.LayerNorm(self.hidden_dim)
-        self.memory_ffn = FFN(d_model=self.hidden_dim, d_ffn=self.ffn_dim, dropout=self.dropout)
-        self.query_feat_dropout = nn.Dropout(self.dropout)
-        self.query_feat_norm = nn.LayerNorm(self.hidden_dim)
-        self.query_feat_ffn = FFN(d_model=self.hidden_dim, d_ffn=self.ffn_dim, dropout=self.dropout)
         self.query_pos_head = MLP(
             input_dim=self.hidden_dim*2,
             hidden_dim=self.hidden_dim,
@@ -478,7 +464,7 @@ class SambaQueryUpdater(nn.Module):
                             active_tracks = TrackInstances.cat_tracked_instances(active_tracks, insert_fp)
 
                 if len(active_tracks) == 0:
-                    device = next(self.query_feat_ffn.parameters()).device
+                    device = self.query_pos_head.layers[0].weight.device
                     fake_tracks = TrackInstances(frame_height=1.0, frame_width=1.0, hidden_dim=self.hidden_dim,
                                                  state_dim=self.state_dim, expand=self.expand,
                                                  num_layers=self.num_layers, conv_dim=self.conv_dim

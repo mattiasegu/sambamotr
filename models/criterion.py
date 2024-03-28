@@ -347,7 +347,7 @@ class ClipCriterion:
                 expand=self.expand,
                 num_layers=self.num_layers,
                 conv_dim=self.conv_dim,
-            ).to(model_outputs["outputs"].device)
+            ).to(self.device)
             detections.ref_pts = model_outputs["init_ref_pts"][b][unmatched_indexes]
             detections.output_embed = model_outputs["outputs"][b][unmatched_indexes]
             detections.logits = model_outputs["pred_logits"][b][unmatched_indexes]
