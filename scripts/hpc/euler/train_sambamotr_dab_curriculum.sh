@@ -1,6 +1,6 @@
 #!/bin/bash
 JOB_NAME=sambamotr_curriculum_dancetrack
-TIME=24:00:00  # TIME=(24:00:00)
+TIME=48:00:00  # TIME=(24:00:00)
 GPUS=8
 CPUS=16
 MEM_PER_CPU=10000

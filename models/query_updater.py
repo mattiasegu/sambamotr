@@ -352,8 +352,7 @@ class SambaQueryUpdater(nn.Module):
     def update_tracks_embedding(self, tracks: List[TrackInstances]):
         for b in range(len(tracks)):
             scores = torch.max(logits_to_scores(logits=tracks[b].logits), dim=1).values
-            # is_pos = scores > self.update_threshold
-            is_pos = scores > 0.0
+            is_pos = scores > self.update_threshold
             if self.visualize:
                 os.makedirs("./outputs/visualize_tmp/query_updater/", exist_ok=True)
                 torch.save(tracks[b].ref_pts.cpu(), "./outputs/visualize_tmp/query_updater/current_ref_pts.tensor")
@@ -367,9 +366,9 @@ class SambaQueryUpdater(nn.Module):
                 torch.save(tracks[b].labels.cpu(), "./outputs/visualize_tmp/query_updater/current_labels.tensor")
                 torch.save(scores.cpu(), "./outputs/visualize_tmp/query_updater/current_scores.tensor")
             if self.use_dab:
-                tracks[b].ref_pts[is_pos] = inverse_sigmoid(tracks[b][is_pos].boxes.detach().clone())
+                tracks[b].ref_pts[is_pos] = inverse_sigmoid(tracks[b].boxes[is_pos].detach().clone())
             else:
-                tracks[b].ref_pts[is_pos] = inverse_sigmoid(tracks[b][is_pos].boxes.detach().clone())
+                tracks[b].ref_pts[is_pos] = inverse_sigmoid(tracks[b].boxes[is_pos].detach().clone())
             # TODO: understand why the inverse_sigmoid is done here. is there a sigmoid anywhere else later?
 
             output_pos = pos_to_pos_embed(tracks[b].ref_pts.sigmoid(), num_pos_feats=self.hidden_dim//2)
@@ -488,8 +487,8 @@ class SambaQueryUpdater(nn.Module):
                     fake_tracks.last_output = torch.randn((1, self.hidden_dim), dtype=torch.float, device=device)
                     fake_tracks.long_memory = torch.randn((1, self.hidden_dim), dtype=torch.float, device=device)
                     # Samba
-                    fake_tracks.hidden_state = torch.zeros((1, self.hidden_dim * self.expand, self.state_dim), dtype=torch.float)
-                    fake_tracks.conv_history = torch.zeros((1, self.num_layers, self.conv_dim, self.hidden_dim * self.expand), dtype=torch.float)
+                    fake_tracks.hidden_state = torch.zeros((1, self.hidden_dim * self.expand, self.state_dim), dtype=torch.float, device=device)
+                    fake_tracks.conv_history = torch.zeros((1, self.num_layers, self.conv_dim, self.hidden_dim * self.expand), dtype=torch.float, device=device)
 
                     active_tracks = fake_tracks
                 tracks.append(active_tracks)

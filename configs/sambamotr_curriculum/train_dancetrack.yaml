@@ -71,7 +71,7 @@ RETURN_INTER_DEC: True
 EXTRA_TRACK_ATTN: False
 AUX_LOSS: True
 USE_DAB: True
-UPDATE_THRESH: 0.5
+UPDATE_THRESH: 0.0
 LONG_MEMORY_LAMBDA: 0.01
 # Pretrain model
 PRETRAINED_MODEL: pretrained/dab_deformable_detr.pth
