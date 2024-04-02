@@ -77,7 +77,6 @@ def eval_model(model: str, eval_dir: str, data_root: str, dataset_name: str, dat
                   f"--data-root {data_root} --submit-data-split {data_split} --config-path {config_path}")
 
     # 将结果移动到对应的文件夹
-    # TODO: check if moved correctly
     tracker_dir = os.path.join(eval_dir, data_split, "tracker")
     tracker_mv_dir = os.path.join(eval_dir, data_split, model.split(".")[0] + "_tracker")
     os.system(f"mv {tracker_dir} {tracker_mv_dir}")

@@ -34,6 +34,7 @@ class Submitter:
         self.seq_dir = path.join(split_dir, seq_name)
         self.outputs_dir = outputs_dir
         self.predict_dir = path.join(self.outputs_dir, "tracker")
+        print(f"Predict dir is {self.predict_dir}")
         self.model = model
         self.tracker = RuntimeTracker(det_score_thresh=det_score_thresh, track_score_thresh=track_score_thresh,
                                       miss_tolerance=miss_tolerance,

@@ -26,7 +26,9 @@ DATA_ROOT=${TMPDIR}/data  # New data root value
 mkdir -p ${DATA_ROOT}/DanceTrack/
 cp -r /cluster/work/cvl/segum/datasets/mot/data/DanceTrack/annotations ${DATA_ROOT}/DanceTrack/
 cp /cluster/work/cvl/segum/datasets/mot/data/DanceTrack/train.tar ${DATA_ROOT}/DanceTrack/
+cp /cluster/work/cvl/segum/datasets/mot/data/DanceTrack/train_seqmap.txt ${DATA_ROOT}/DanceTrack/
 cp /cluster/work/cvl/segum/datasets/mot/data/DanceTrack/val.tar ${DATA_ROOT}/DanceTrack/
+cp /cluster/work/cvl/segum/datasets/mot/data/DanceTrack/val_seqmap.txt ${DATA_ROOT}/DanceTrack/
 tar -xf ${DATA_ROOT}/DanceTrack/train.tar -C ${DATA_ROOT}/DanceTrack/
 tar -xf ${DATA_ROOT}/DanceTrack/val.tar -C ${DATA_ROOT}/DanceTrack/
 ###############
