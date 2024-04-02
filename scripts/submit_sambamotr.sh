@@ -14,17 +14,17 @@ else
      CMD=tools/main.sh
 fi
 
-# ${CMD} \
-#     ${GPUS} \
-     # --mode submit \
-     # --data-root ${DATA_ROOT} \
-     # --submit-dir ${OUT_DIR} \
-     # --submit-model ${MODEL_NAME} \
-     # --config-path ${CONFIG}
-
-python -m debugpy --listen $HOSTNAME:5678 --wait-for-client main.py \
+${CMD} \
+    ${GPUS} \
      --mode submit \
      --data-root ${DATA_ROOT} \
      --submit-dir ${OUT_DIR} \
      --submit-model ${MODEL_NAME} \
      --config-path ${CONFIG}
+
+# python -m debugpy --listen $HOSTNAME:5678 --wait-for-client main.py \
+#      --mode submit \
+#      --data-root ${DATA_ROOT} \
+#      --submit-dir ${OUT_DIR} \
+#      --submit-model ${MODEL_NAME} \
+#      --config-path ${CONFIG}
