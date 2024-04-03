@@ -1,6 +1,8 @@
 # @Author       : Ruopeng Gao
 # @Date         : 2022/7/5
 # @Description  : To build a model.
+import os
+import shutil
 import torch
 import copy
 import math
@@ -44,6 +46,20 @@ def load_checkpoint(model: nn.Module, path: str, states: dict = None,
         states.update(load_state["states"])
     return
 
+
+def link_checkpoint(filepath: str, linkpath: str):
+    if is_main_process():
+        if os.path.islink(linkpath) or os.path.isfile(linkpath):
+            os.remove(linkpath)
+        elif os.path.isdir(linkpath):
+            shutil.rmtree(linkpath)
+        try:
+            os.symlink(os.path.relpath(filepath, os.path.dirname(linkpath)), linkpath)
+        except OSError:
+            # on Windows, special permissions are required to create symbolic links as a regular user
+            # fall back to copying the file
+            shutil.copy(filepath, linkpath)
+    return
 
 def get_activation_layer(activation: str):
     if activation == "ReLU":

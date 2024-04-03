@@ -4,7 +4,7 @@ CONFIG=./configs/sambamotr/train_dancetrack.yaml
 OUT_DIR=./outputs/tmp/sambamotr_dancetrack/
 BS=1 
 DATA_ROOT=/BS/diffusion-track/nobackup/data/mot/
-CHECKPOINT=outputs/tmp/sambamotr_dancetrack/checkpoint_0.pth
+CHECKPOINT=pretrained/sambamotr_curriculum_dancetrack/checkpoint_14.pth
 
 GPUS=1
 if [ $GPUS -gt 1 ]

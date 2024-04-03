@@ -17,7 +17,7 @@ from utils.nested_tensor import tensor_list_to_nested_tensor
 from models.memotr import MeMOTR
 from structures.track_instances import TrackInstances
 from models.criterion import build as build_criterion, ClipCriterion
-from models.utils import get_model, save_checkpoint, load_checkpoint
+from models.utils import get_model, save_checkpoint, load_checkpoint, link_checkpoint
 from torch.optim import Adam, AdamW
 from torch.optim.lr_scheduler import MultiStepLR, CosineAnnealingLR
 from log.logger import Logger, ProgressLogger
@@ -144,13 +144,16 @@ def train(config: dict):
             pass
         else:
             if config["DATASET"] == "DanceTrack" or config["EPOCHS"] < 100 or (epoch + 1) % 5 == 0:
+                save_path = os.path.join(config["OUTPUTS_DIR"], f"checkpoint_{epoch}.pth")
+                link_path = os.path.join(config["OUTPUTS_DIR"], f"last_checkpoint.pth")
                 save_checkpoint(
                     model=model,
-                    path=os.path.join(config["OUTPUTS_DIR"], f"checkpoint_{epoch}.pth"),
+                    path=save_path,
                     states=train_states,
                     optimizer=optimizer,
                     scheduler=scheduler
                 )
+                link_checkpoint(save_path, link_path)
 
     return
 
@@ -189,6 +192,8 @@ def train_one_epoch(model: MeMOTR, train_states: dict, max_norm: float,
     epoch_start_timestamp = time.time()
     for i, batch in enumerate(dataloader):
         iter_start_timestamp = time.time()
+        if i % 100 == 0:
+            pass
         tracks = TrackInstances.init_tracks(batch=batch,
                                             hidden_dim=get_model(model).hidden_dim,
                                             num_classes=get_model(model).num_classes,
@@ -217,10 +222,10 @@ def train_one_epoch(model: MeMOTR, train_states: dict, max_norm: float,
                     model_outputs=res,
                     tracked_instances=tracks,
                     frame_idx=frame_idx
-                )  # TODO: check tracks usage
+                )
                 if frame_idx < len(batch["imgs"][0]) - 1:
                     tracks = get_model(model).postprocess_single_frame(
-                        previous_tracks, new_tracks, unmatched_dets)  # TODO: check tracks usage
+                        previous_tracks, new_tracks, unmatched_dets)
             else:
                 with torch.no_grad():
                     frame = [fs[frame_idx] for fs in batch["imgs"]]
