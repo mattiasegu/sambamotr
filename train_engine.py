@@ -20,9 +20,12 @@ from models.criterion import build as build_criterion, ClipCriterion
 from models.utils import get_model, save_checkpoint, load_checkpoint, link_checkpoint
 from torch.optim import Adam, AdamW
 from torch.optim.lr_scheduler import MultiStepLR, CosineAnnealingLR
+from torch.utils import tensorboard as tb
 from log.logger import Logger, ProgressLogger
 from log.log import MetricLog
 from models.utils import load_pretrained_model
+from submit_engine import Submitter
+from eval_engine import metrics_to_tensorboard
 
 
 def train(config: dict):
@@ -67,6 +70,14 @@ def train(config: dict):
     else:
         raise ValueError(f"Do not support lr scheduler '{config['LR_SCHEDULER']}'")
 
+    # Eval
+    val_split = "val"  # TODO: change it for MOT 17 (i.e. add it as flag in config file so that we can set mot15)
+    # check diff from config["OUTPUTS_DIR"]
+    outputs_dir = os.path.join(config["OUTPUTS_DIR"], val_split)
+    tb_writer = tb.SummaryWriter(
+        log_dir=os.path.join(outputs_dir, "tb")
+    )
+
     # Training states
     train_states = {
         "start_epoch": 0,
@@ -91,6 +102,12 @@ def train(config: dict):
 
     multi_checkpoint = "MULTI_CHECKPOINT" in config and config["MULTI_CHECKPOINT"]
 
+    # Pre-eval
+    # if pre_eval:
+    if True:
+        metrics = eval_model(config, model, outputs_dir, val_split)
+        metrics_to_tensorboard(writer=tb_writer, metrics=metrics, epoch=0)
+        
     # Training:
     for epoch in range(start_epoch, config["EPOCHS"]):
         if is_distributed():
@@ -155,7 +172,105 @@ def train(config: dict):
                 )
                 link_checkpoint(save_path, link_path)
 
+        if epoch % config["EVAL_EPOCHS"]:
+            metrics = eval_model(config, model, outputs_dir, val_split)
+            metrics_to_tensorboard(writer=tb_writer, metrics=metrics, epoch=epoch+1)
+
     return
+
+
+def eval_model(config: dict, model: MeMOTR, outputs_dir: str, val_split: str):
+    # Submit
+    data_root = config["DATA_ROOT"]
+    dataset_name = config["DATASET"]
+    use_dab = config["USE_DAB"]
+    det_score_thresh = config["DET_SCORE_THRESH"]
+    track_score_thresh = config["TRACK_SCORE_THRESH"]
+    result_score_thresh = config["RESULT_SCORE_THRESH"]
+    use_motion = config["USE_MOTION"]
+    motion_min_length = config["MOTION_MIN_LENGTH"]
+    motion_max_length = config["MOTION_MAX_LENGTH"]
+    motion_lambda = config["MOTION_LAMBDA"]
+    miss_tolerance = config["MISS_TOLERANCE"]
+
+    data_dir = os.path.join(data_root, dataset_name)
+    if dataset_name == "DanceTrack" or dataset_name == "SportsMOT":
+        data_split_dir = os.path.join(data_dir, val_split)
+    elif dataset_name == "BDD100K":
+        data_split_dir = os.path.join(data_dir, "images/track/", val_split)
+    elif "MOT17" in dataset_name:
+        data_split_dir = os.path.join(data_dir, "images", val_split)
+    else:
+        raise NotImplementedError(f"Eval DOES NOT support dataset '{dataset_name}'")
+
+    seq_names = os.listdir(data_split_dir)
+
+    if is_distributed():
+        total_seq_names = seq_names
+        seq_names = []
+        for i in range(len(total_seq_names)):
+            if i % distributed_world_size() == distributed_rank():
+                seq_names.append(total_seq_names[i])
+
+    for seq_name in seq_names:
+        seq_name = str(seq_name)
+        submitter = Submitter(
+            dataset_name=dataset_name,
+            split_dir=data_split_dir,
+            seq_name=seq_name,
+            outputs_dir=outputs_dir,
+            model=model,
+            use_dab=use_dab,
+            det_score_thresh=det_score_thresh,
+            track_score_thresh=track_score_thresh,
+            result_score_thresh=result_score_thresh,
+            use_motion=use_motion,
+            motion_min_length=motion_min_length,
+            motion_max_length=motion_max_length,
+            motion_lambda=motion_lambda,
+            miss_tolerance=miss_tolerance
+        )
+        submitter.run()
+
+    # Eval
+    if is_main_process():
+        tracker_dir = os.path.join(outputs_dir, "tracker")
+        tracker_mv_dir = os.path.join(outputs_dir, model.split(".")[0] + "_tracker")
+        os.system(f"mv {tracker_dir} {tracker_mv_dir}")
+        
+        if dataset_name == "DanceTrack" or dataset_name == "SportsMOT":
+            os.system(f"python3 TrackEval/scripts/run_mot_challenge.py --SPLIT_TO_EVAL {val_split}  "
+                    f"--METRICS HOTA CLEAR Identity  --GT_FOLDER {data_split_dir} "
+                    f"--SEQMAP_FILE {os.path.join(data_dir, f'{val_split}_seqmap.txt')} "
+                    f"--SKIP_SPLIT_FOL True --TRACKERS_TO_EVAL '' --TRACKER_SUB_FOLDER ''  --USE_PARALLEL True "
+                    f"--NUM_PARALLEL_CORES 8 --PLOT_CURVES False "
+                    f"--TRACKERS_FOLDER {tracker_mv_dir}")
+        elif "MOT17" in dataset_name:
+            if "mot15" in val_split:
+                os.system(f"python3 TrackEval/scripts/run_mot_challenge.py --SPLIT_TO_EVAL {val_split}  "
+                        f"--METRICS HOTA CLEAR Identity  --GT_FOLDER {data_split_dir} "
+                        f"--SEQMAP_FILE {os.path.join(data_dir, f'{val_split}_seqmap.txt')} "
+                        f"--SKIP_SPLIT_FOL True --TRACKERS_TO_EVAL '' --TRACKER_SUB_FOLDER ''  --USE_PARALLEL True "
+                        f"--NUM_PARALLEL_CORES 8 --PLOT_CURVES False "
+                        f"--TRACKERS_FOLDER {tracker_mv_dir} --BENCHMARK MOT15")
+            else:
+                os.system(f"python3 TrackEval/scripts/run_mot_challenge.py --SPLIT_TO_EVAL {val_split}  "
+                        f"--METRICS HOTA CLEAR Identity  --GT_FOLDER {data_split_dir} "
+                        f"--SEQMAP_FILE {os.path.join(data_dir, f'{val_split}_seqmap.txt')} "
+                        f"--SKIP_SPLIT_FOL True --TRACKERS_TO_EVAL '' --TRACKER_SUB_FOLDER ''  --USE_PARALLEL True "
+                        f"--NUM_PARALLEL_CORES 8 --PLOT_CURVES False "
+                        f"--TRACKERS_FOLDER {tracker_mv_dir} --BENCHMARK MOT17")
+        else:
+            raise NotImplementedError(f"Do not support this Dataset name: {dataset_name}")
+
+        metric_path = os.path.join(tracker_mv_dir, "pedestrian_summary.txt")
+        with open(metric_path) as f:
+            metric_names = f.readline()[:-1].split(" ")
+            metric_values = f.readline()[:-1].split(" ")
+        metrics = {
+            n: float(v) for n, v in zip(metric_names, metric_values)
+        }
+    return metrics
 
 
 def train_one_epoch(model: MeMOTR, train_states: dict, max_norm: float,
@@ -192,8 +307,6 @@ def train_one_epoch(model: MeMOTR, train_states: dict, max_norm: float,
     epoch_start_timestamp = time.time()
     for i, batch in enumerate(dataloader):
         iter_start_timestamp = time.time()
-        if i % 100 == 0:
-            pass
         tracks = TrackInstances.init_tracks(batch=batch,
                                             hidden_dim=get_model(model).hidden_dim,
                                             num_classes=get_model(model).num_classes,
