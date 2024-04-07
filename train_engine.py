@@ -104,9 +104,9 @@ def train(config: dict):
 
     # Pre-eval
     # if pre_eval:
-    if True:
-        metrics = eval_model(config, model, outputs_dir, val_split)
-        metrics_to_tensorboard(writer=tb_writer, metrics=metrics, epoch=0)
+    # if True:
+    #     metrics = eval_model(config, model, outputs_dir, val_split)
+    #     metrics_to_tensorboard(writer=tb_writer, metrics=metrics, epoch=0)
         
     # Training:
     for epoch in range(start_epoch, config["EPOCHS"]):
@@ -172,9 +172,9 @@ def train(config: dict):
                 )
                 link_checkpoint(save_path, link_path)
 
-        if epoch % config["EVAL_EPOCHS"]:
-            metrics = eval_model(config, model, outputs_dir, val_split)
-            metrics_to_tensorboard(writer=tb_writer, metrics=metrics, epoch=epoch+1)
+        # if epoch % config["EVAL_EPOCHS"]:
+        #     metrics = eval_model(config, model, outputs_dir, val_split)
+        #     metrics_to_tensorboard(writer=tb_writer, metrics=metrics, epoch=epoch+1)
 
     return
 
@@ -310,7 +310,7 @@ def train_one_epoch(model: MeMOTR, train_states: dict, max_norm: float,
         tracks = TrackInstances.init_tracks(batch=batch,
                                             hidden_dim=get_model(model).hidden_dim,
                                             num_classes=get_model(model).num_classes,
-                                            state_dim=get_model(model).query_updater.state_dim,
+                                            state_dim=get_model(model).query_updater.state_dim,  # TODO: add if hasattr else None
                                             expand=get_model(model).query_updater.expand,
                                             num_layers=get_model(model).query_updater.num_layers,
                                             conv_dim=get_model(model).query_updater.conv_dim,

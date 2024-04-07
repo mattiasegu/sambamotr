@@ -41,23 +41,21 @@ mkdir -p resources/errors/
 mkdir -p resources/outputs/
 
 
-GPUS_TYPE=rtx_4090  # GPUS_TYPE=(rtx_3090 | rtx_4090 | titan_rtx)
-ID=$(sbatch \
-     --parsable \
-     -t ${TIME} \
-     --job-name=${JOB_NAME} \
-     --gpus=${GPUS_TYPE}:${GPUS_PER_NODE} \
-     --ntasks=${CPUS_PER_TASK} \
-     --mem-per-cpu ${MEM_PER_CPU} \
-     -e resources/errors/%j.log \
-     -o resources/outputs/%j.log \
-     ${SBATCH_ARGS} \
-     ${CMD} \
-     ${GPUS} \
-          --mode eval \
-          --eval-mode specific \
-          --config-path ${CONFIG} \
-          --data-root ${DATA_ROOT} \
-          --eval-dir ${OUT_DIR} \
-          --eval-model ${MODEL_NAME} \
-          --eval-threads ${GPUS})
+# ${CMD} \
+# ${GPUS} \
+#      --mode eval \
+#      --eval-mode specific \
+#      --config-path ${CONFIG} \
+#      --data-root ${DATA_ROOT} \
+#      --eval-dir ${OUT_DIR} \
+#      --eval-model ${MODEL_NAME} \
+#      --eval-threads ${GPUS}
+
+${CMD} \
+${GPUS} \
+     --mode eval \
+     --eval-mode continue \
+     --config-path ${CONFIG} \
+     --data-root ${DATA_ROOT} \
+     --eval-dir ${OUT_DIR} \
+     --eval-threads ${GPUS}
