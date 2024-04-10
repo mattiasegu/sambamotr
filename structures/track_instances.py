@@ -106,7 +106,9 @@ class TrackInstances:
 
     @staticmethod
     def cat_tracked_instances(tracked1: "TrackInstances", tracked2: "TrackInstances"):
-        res = TrackInstances(frame_height=tracked1.frame_height, frame_width=tracked1.frame_width)
+        res = TrackInstances(frame_height=tracked1.frame_height, frame_width=tracked1.frame_width,
+                             hidden_dim=tracked1.hidden_dim, state_dim=tracked1.state_dim, expand=tracked1.expand, 
+                             num_layers=tracked1.num_layers, conv_dim=tracked1.conv_dim)
 
         for k, v in vars(tracked1).items():
             if type(v) is torch.Tensor:

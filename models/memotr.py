@@ -58,7 +58,6 @@ class MeMOTR(nn.Module):
         if self.use_dab:
             self.det_anchor = nn.Parameter(torch.randn(self.n_det_queries, 4))  # (N_det, 4)
             self.det_query_embed = nn.Parameter(torch.randn(self.n_det_queries, self.hidden_dim))       # (N_det, C)
-            # TODO: should I add Mamba's hidden_state made of zeros here?
         else:
             self.det_query_embed = nn.Parameter(torch.randn(self.n_det_queries, self.hidden_dim * 2))   # (N_det, 2C)
         assert self.n_feature_levels > 1

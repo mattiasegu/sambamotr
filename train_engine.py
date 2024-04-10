@@ -101,12 +101,6 @@ def train(config: dict):
         model = DDP(module=model, device_ids=[distributed_rank()], find_unused_parameters=False)
 
     multi_checkpoint = "MULTI_CHECKPOINT" in config and config["MULTI_CHECKPOINT"]
-
-    # Pre-eval
-    # if pre_eval:
-    # if True:
-    #     metrics = eval_model(config, model, outputs_dir, val_split)
-    #     metrics_to_tensorboard(writer=tb_writer, metrics=metrics, epoch=0)
         
     # Training:
     for epoch in range(start_epoch, config["EPOCHS"]):
@@ -172,14 +166,13 @@ def train(config: dict):
                 )
                 link_checkpoint(save_path, link_path)
 
-        # if epoch % config["EVAL_EPOCHS"]:
-        #     metrics = eval_model(config, model, outputs_dir, val_split)
-        #     metrics_to_tensorboard(writer=tb_writer, metrics=metrics, epoch=epoch+1)
+        if epoch % config["EVAL_EPOCHS"] == 0:
+            eval_model(config, model, outputs_dir, val_split, writer=tb_writer, epoch=epoch)
 
     return
 
 
-def eval_model(config: dict, model: MeMOTR, outputs_dir: str, val_split: str):
+def eval_model(config: dict, model: MeMOTR, outputs_dir: str, val_split: str, writer: tb.SummaryWriter, epoch: int):
     # Submit
     data_root = config["DATA_ROOT"]
     dataset_name = config["DATASET"]
@@ -232,10 +225,13 @@ def eval_model(config: dict, model: MeMOTR, outputs_dir: str, val_split: str):
         )
         submitter.run()
 
+    if is_distributed():
+        torch.distributed.barrier()
+
     # Eval
     if is_main_process():
         tracker_dir = os.path.join(outputs_dir, "tracker")
-        tracker_mv_dir = os.path.join(outputs_dir, model.split(".")[0] + "_tracker")
+        tracker_mv_dir = os.path.join(outputs_dir, f"checkpoint_{epoch}" + "_tracker")
         os.system(f"mv {tracker_dir} {tracker_mv_dir}")
         
         if dataset_name == "DanceTrack" or dataset_name == "SportsMOT":
@@ -270,7 +266,9 @@ def eval_model(config: dict, model: MeMOTR, outputs_dir: str, val_split: str):
         metrics = {
             n: float(v) for n, v in zip(metric_names, metric_values)
         }
-    return metrics
+        metrics_to_tensorboard(writer=writer, metrics=metrics, epoch=epoch)
+
+    return
 
 
 def train_one_epoch(model: MeMOTR, train_states: dict, max_norm: float,
@@ -310,18 +308,18 @@ def train_one_epoch(model: MeMOTR, train_states: dict, max_norm: float,
         tracks = TrackInstances.init_tracks(batch=batch,
                                             hidden_dim=get_model(model).hidden_dim,
                                             num_classes=get_model(model).num_classes,
-                                            state_dim=get_model(model).query_updater.state_dim,  # TODO: add if hasattr else None
-                                            expand=get_model(model).query_updater.expand,
-                                            num_layers=get_model(model).query_updater.num_layers,
-                                            conv_dim=get_model(model).query_updater.conv_dim,
+                                            state_dim=getattr(get_model(model).query_updater, "state_dim", 0),
+                                            expand=getattr(get_model(model).query_updater, "expand", 0),
+                                            num_layers=getattr(get_model(model).query_updater, "num_layers", 0),
+                                            conv_dim=getattr(get_model(model).query_updater, "conv_dim", 0),
                                             device=device, use_dab=use_dab)
         criterion.init_a_clip(batch=batch,
                               hidden_dim=get_model(model).hidden_dim,
                               num_classes=get_model(model).num_classes,
-                              state_dim=get_model(model).query_updater.state_dim,
-                              expand=get_model(model).query_updater.expand,
-                              num_layers=get_model(model).query_updater.num_layers,
-                              conv_dim=get_model(model).query_updater.conv_dim,
+                              state_dim=getattr(get_model(model).query_updater, "state_dim", 0),
+                              expand=getattr(get_model(model).query_updater, "expand", 0),
+                              num_layers=getattr(get_model(model).query_updater, "num_layers", 0),
+                              conv_dim=getattr(get_model(model).query_updater, "conv_dim", 0),
                               device=device)
 
         for frame_idx in range(len(batch["imgs"][0])):

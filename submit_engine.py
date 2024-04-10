@@ -60,10 +60,10 @@ class Submitter:
     def run(self):
         tracks = [TrackInstances(hidden_dim=get_model(self.model).hidden_dim,
                                  num_classes=get_model(self.model).num_classes,
-                                 state_dim=get_model(self.model).query_updater.state_dim,
-                                 expand=get_model(self.model).query_updater.expand,
-                                 num_layers=get_model(self.model).query_updater.num_layers,
-                                 conv_dim=get_model(self.model).query_updater.conv_dim,
+                                 state_dim=getattr(get_model(self.model).query_updater, "state_dim", 0),
+                                 expand=getattr(get_model(self.model).query_updater, "expand", 0),
+                                 num_layers=getattr(get_model(self.model).query_updater, "num_layers", 0),
+                                 conv_dim=getattr(get_model(self.model).query_updater, "conv_dim", 0),
                                  use_dab=self.use_dab).to(self.device)]
         bdd100k_results = []    # for bdd100k, will be converted into json file, different from other datasets.
         for i, ((image, ori_image), info) in enumerate(tqdm(self.dataloader, desc=f"Submit seq: {self.seq_name}")):

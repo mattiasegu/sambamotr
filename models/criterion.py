@@ -526,10 +526,13 @@ def build(config: dict):
             merge_det_track_layer=(0 if "MERGE_DET_TRACK_LAYER" not in config else config["MERGE_DET_TRACK_LAYER"]),
             aux_weights=config["AUX_LOSS_WEIGHT"],
             hidden_dim=config["HIDDEN_DIM"],
-            use_dab=config["USE_DAB"]
+            use_dab=config["USE_DAB"],
+            state_dim=0,
+            expand=0,
+            num_layers=0,
+            conv_dim=0,
         )
     elif config["CRITERION"] == "SambaClipCriterion":
-        # TODO: make sure that track hidden state is added everywhere
         return SambaClipCriterion(
             num_classes=dataset_num_classes[config["DATASET"]],
             matcher=build_matcher(config=config),
@@ -545,7 +548,11 @@ def build(config: dict):
             merge_det_track_layer=(0 if "MERGE_DET_TRACK_LAYER" not in config else config["MERGE_DET_TRACK_LAYER"]),
             aux_weights=config["AUX_LOSS_WEIGHT"],
             hidden_dim=config["HIDDEN_DIM"],
-            use_dab=config["USE_DAB"]
+            use_dab=config["USE_DAB"],
+            state_dim=config["STATE_DIM"],
+            expand=config["EXPAND"],
+            num_layers=config["SAMBA_NUM_LAYERS"],
+            conv_dim=config["CONV_DIM"],
         )
     else:
         ValueError(f"Do not support criterion '{config['CRITERION']}'")

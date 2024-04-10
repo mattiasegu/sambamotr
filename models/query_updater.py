@@ -220,7 +220,8 @@ class QueryUpdater(nn.Module):
 
                 if len(active_tracks) == 0:
                     device = next(self.query_feat_ffn.parameters()).device
-                    fake_tracks = TrackInstances(frame_height=1.0, frame_width=1.0, hidden_dim=self.hidden_dim).to(
+                    fake_tracks = TrackInstances(frame_height=1.0, frame_width=1.0, hidden_dim=self.hidden_dim,
+                                                 state_dim=0, expand=0, num_layers=0, conv_dim=0).to(
                         device=device)
                     if self.use_dab:
                         fake_tracks.query_embed = torch.randn((1, self.hidden_dim), dtype=torch.float,
