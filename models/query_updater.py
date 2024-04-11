@@ -190,10 +190,7 @@ class QueryUpdater(nn.Module):
                     active_tracks = TrackInstances.cat_tracked_instances(active_tracks, unmatched_dets[b])
                     scores = torch.max(logits_to_scores(logits=active_tracks.logits), dim=1).values
                     keep_idxes = (scores > self.update_threshold) | (active_tracks.ids >= 0)
-                    try:
-                        active_tracks = active_tracks[keep_idxes]
-                    except:
-                        print('hi')  # TODO: remove
+                    active_tracks = active_tracks[keep_idxes]
                     active_tracks.ids[active_tracks.iou < 0.5] = -1
                 else:
                     active_tracks = TrackInstances.cat_tracked_instances(previous_tracks[b], new_tracks[b])
@@ -244,6 +241,9 @@ class QueryUpdater(nn.Module):
                     fake_tracks.iou = torch.zeros((1,), dtype=torch.float, device=device)
                     fake_tracks.last_output = torch.randn((1, self.hidden_dim), dtype=torch.float, device=device)
                     fake_tracks.long_memory = torch.randn((1, self.hidden_dim), dtype=torch.float, device=device)
+                    # Samba
+                    fake_tracks.hidden_state = torch.zeros((1, self.hidden_dim * self.expand, self.state_dim), dtype=torch.float, device=device)
+                    fake_tracks.conv_history = torch.zeros((1, self.num_layers, self.conv_dim, self.hidden_dim * self.expand), dtype=torch.float, device=device)
                     active_tracks = fake_tracks
                 tracks.append(active_tracks)
         else:
