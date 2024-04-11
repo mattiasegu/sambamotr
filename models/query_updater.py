@@ -193,7 +193,7 @@ class QueryUpdater(nn.Module):
                     try:
                         active_tracks = active_tracks[keep_idxes]
                     except:
-                        print('hi')
+                        print('hi')  # TODO: remove
                     active_tracks.ids[active_tracks.iou < 0.5] = -1
                 else:
                     active_tracks = TrackInstances.cat_tracked_instances(previous_tracks[b], new_tracks[b])

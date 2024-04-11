@@ -73,7 +73,10 @@ class TrackInstances:
                              num_layers=self.num_layers, conv_dim=self.conv_dim)
         for k, v in vars(self).items():
             if hasattr(v, "__getitem__") and v.shape[0] != 0:
-                res.__setattr__(k, v[item])
+                try:
+                    res.__setattr__(k, v[item])
+                except:
+                    print(f"Error caught for attribute {k}")  # TODO: remove
             else:
                 res.__setattr__(k, v)
         return res
