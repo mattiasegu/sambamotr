@@ -28,7 +28,8 @@ class Submitter:
                  use_motion: bool = False, motion_lambda: float = 0.5,
                  motion_min_length: int = 3, motion_max_length: int = 5,
                  use_dab: bool = False,
-                 visualize: bool = False):
+                 visualize: bool = False,
+                 progress_bar: bool = True):
         self.dataset_name = dataset_name
         self.seq_name = seq_name
         self.seq_dir = path.join(split_dir, seq_name)
@@ -49,6 +50,7 @@ class Submitter:
         self.use_dab = use_dab
         self.use_motion = use_motion
         self.visualize = visualize
+        self.progress_bar = progress_bar
         # 对路径进行一些操作
         os.makedirs(self.predict_dir, exist_ok=True)
         if os.path.exists(os.path.join(self.predict_dir, f'{self.seq_name}.txt')):
@@ -66,7 +68,13 @@ class Submitter:
                                  conv_dim=getattr(get_model(self.model).query_updater, "conv_dim", 0),
                                  use_dab=self.use_dab).to(self.device)]
         bdd100k_results = []    # for bdd100k, will be converted into json file, different from other datasets.
-        for i, ((image, ori_image), info) in enumerate(tqdm(self.dataloader, desc=f"Submit seq: {self.seq_name}")):
+
+        if self.progress_bar:
+            dataloader = tqdm(self.dataloader, desc=f"Submit seq: {self.seq_name}")
+        else:
+            dataloader = self.dataloader
+
+        for i, ((image, ori_image), info) in enumerate(dataloader):
             # image: (1, C, H, W); ori_image: (1, H, W, C)
             frame = tensor_list_to_nested_tensor([image[0]]).to(self.device)
             res = self.model(frame=frame, tracks=tracks)

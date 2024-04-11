@@ -190,7 +190,10 @@ class QueryUpdater(nn.Module):
                     active_tracks = TrackInstances.cat_tracked_instances(active_tracks, unmatched_dets[b])
                     scores = torch.max(logits_to_scores(logits=active_tracks.logits), dim=1).values
                     keep_idxes = (scores > self.update_threshold) | (active_tracks.ids >= 0)
-                    active_tracks = active_tracks[keep_idxes]
+                    try:
+                        active_tracks = active_tracks[keep_idxes]
+                    except:
+                        print('hi')
                     active_tracks.ids[active_tracks.iou < 0.5] = -1
                 else:
                     active_tracks = TrackInstances.cat_tracked_instances(previous_tracks[b], new_tracks[b])

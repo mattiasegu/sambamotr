@@ -221,7 +221,8 @@ def eval_model(config: dict, model: MeMOTR, outputs_dir: str, val_split: str, wr
             motion_min_length=motion_min_length,
             motion_max_length=motion_max_length,
             motion_lambda=motion_lambda,
-            miss_tolerance=miss_tolerance
+            miss_tolerance=miss_tolerance,
+            progress_bar=False
         )
         submitter.run()
 
