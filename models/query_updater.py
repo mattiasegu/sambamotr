@@ -19,6 +19,12 @@ from .samba import Samba
 
 class QueryUpdater(nn.Module):
     def __init__(self, hidden_dim: int, ffn_dim: int,
+                 num_heads: int,
+                 state_dim: int,
+                 expand: int,
+                 num_layers: int,
+                 conv_dim: int,
+                 with_self_attn: bool,
                  tp_drop_ratio: float, fp_insert_ratio: float,
                  dropout: float,
                  use_checkpoint: bool, use_dab: bool,
@@ -37,6 +43,14 @@ class QueryUpdater(nn.Module):
 
         self.update_threshold = update_threshold
         self.long_memory_lambda = long_memory_lambda
+
+        # Samba
+        self.num_heads = num_heads
+        self.state_dim = state_dim
+        self.expand = expand
+        self.num_layers = num_layers
+        self.conv_dim = conv_dim
+        self.with_self_attn = with_self_attn
 
         self.confidence_weight_net = nn.Sequential(
             MLP(input_dim=self.hidden_dim, hidden_dim=self.hidden_dim, output_dim=self.hidden_dim, num_layers=2),
@@ -313,7 +327,7 @@ class SambaQueryUpdater(nn.Module):
                                 bias=False,
                                 with_self_attn=True,
                                 self_attn_cfg=dict(
-                                    embed_dims=hidden_dim, num_heads=8, dropout=0.0),
+                                    embed_dims=hidden_dim, num_heads=self.num_heads, dropout=0.0),
                                 ffn_cfg=dict(
                                     embed_dims=hidden_dim,
                                     feedforward_channels=ffn_dim,
@@ -516,6 +530,12 @@ def build(config: dict):
         return QueryUpdater(
                 hidden_dim=config["HIDDEN_DIM"],
                 ffn_dim=config["FFN_DIM"],
+                num_heads=0,
+                state_dim=0,
+                expand=0,
+                num_layers=0,
+                conv_dim=0,
+                with_self_attn=False,
                 dropout=config["DROPOUT"],
                 tp_drop_ratio=config["TP_DROP_RATE"] if "TP_DROP_RATE" in config else 0.0,
                 fp_insert_ratio=config["FP_INSERT_RATE"] if "FP_INSERT_RATE" in config else 0.0,
