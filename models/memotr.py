@@ -280,11 +280,12 @@ class MeMOTR(nn.Module):
     def postprocess_single_frame(self, previous_tracks: List[TrackInstances],
                                  new_tracks: List[TrackInstances],
                                  unmatched_dets: List[TrackInstances] | None,
+                                 intervals: List[int],
                                  no_augment: bool = False):
         """
         Query updating.
         """
-        return self.query_updater(previous_tracks, new_tracks, unmatched_dets, no_augment)
+        return self.query_updater(previous_tracks, new_tracks, unmatched_dets, intervals, no_augment)
 
 
 class SambaMOTR(MeMOTR):

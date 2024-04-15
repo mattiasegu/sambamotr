@@ -8,7 +8,7 @@ from torch.utils.data import Dataset
 
 
 class SeqDataset(Dataset):
-    def __init__(self, seq_dir: str):
+    def __init__(self, seq_dir: str, interval: int = 1):
         # a hack implementation for BDD100K and others:
         if "BDD100K" in seq_dir:
             image_paths = sorted(os.listdir(os.path.join(seq_dir)))
@@ -21,6 +21,8 @@ class SeqDataset(Dataset):
         self.image_width = 1536
         self.mean = [0.485, 0.456, 0.406]
         self.std = [0.229, 0.224, 0.225]
+
+        self.interval = interval
         return
 
     @staticmethod
@@ -43,9 +45,10 @@ class SeqDataset(Dataset):
         return image, ori_image
 
     def __getitem__(self, item):
+        item = item * self.interval
         image = self.load(self.image_paths[item])
         info = self.image_paths[item]
         return self.process_image(image=image), info
 
     def __len__(self):
-        return len(self.image_paths)
+        return len(self.image_paths) // self.interval

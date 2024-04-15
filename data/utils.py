@@ -8,5 +8,6 @@ def collate_fn(batch):
     collated_batch = defaultdict(list)
     for data in batch:
         collated_batch["imgs"].append(data["imgs"])
+        collated_batch["intervals"].append(data["interval"])
         collated_batch["infos"].append(data["infos"])
     return collated_batch

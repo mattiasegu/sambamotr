@@ -77,9 +77,24 @@ LONG_MEMORY_LAMBDA: 0.01
 # Pretrain model
 PRETRAINED_MODEL: pretrained/dab_deformable_detr.pth
 
+# Samba
+STATE_DIM: 8
+EXPAND: 2
+SAMBA_NUM_LAYERS: 2
+CONV_DIM: 4
+FPS_INVARIANT: False
+# other possible ablations: (i) layer type (e.g. S4 or S6)
+WITH_SELF_ATTN: False
+# SAMBA_FFN_DIM: 2048
+# SAMBA_NUM_HEADS: 8
+SAMBA_FFN_DIM: 1024
+SAMBA_NUM_HEADS: 4
+UPDATE_ONLY_POS: True
+MASK_POS: False
+
 # Sampling setting
-SAMPLE_STEPS: [6, 10, 14]
-SAMPLE_LENGTHS: [2, 3, 4, 5]
+SAMPLE_STEPS: []
+SAMPLE_LENGTHS: [5]
 SAMPLE_MODES: [random_interval]
 SAMPLE_INTERVALS: [10]
 
@@ -113,8 +128,8 @@ LOSS_WEIGHT_GIOU: 2
 AUX_LOSS_WEIGHT: [1.0, 1.0, 1.0, 1.0, 1.0]
 
 # Criterion
-CRITERION: ClipCriterion
+CRITERION: SambaClipCriterion
 # Model
-MODEL: MeMOTR
+MODEL: SambaMOTR
 # Query Updater
-QUERY_UPDATER: QueryUpdater
+QUERY_UPDATER: MaskedSambaQueryUpdater

@@ -1,7 +1,8 @@
 #!/bin/bash
 
 JOB_NAME=debug_memotr_dancetrack
-CONFIG=./configs/sambamotr/train_dancetrack.yaml
+# CONFIG=./configs/sambamotr/train_dancetrack.yaml
+CONFIG=./configs/masked_mambamotr/dab_detr/train_dancetrack_update_all_mask_pos.yaml
 OUT_DIR=./outputs/tmp/${JOB_NAME}/
 BS=1 
 DATA_ROOT=/BS/diffusion-track/nobackup/data/mot/

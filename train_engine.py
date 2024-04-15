@@ -101,7 +101,9 @@ def train(config: dict):
         model = DDP(module=model, device_ids=[distributed_rank()], find_unused_parameters=False)
 
     multi_checkpoint = "MULTI_CHECKPOINT" in config and config["MULTI_CHECKPOINT"]
-        
+    
+    # eval_model(config, model, outputs_dir, val_split, writer=tb_writer, epoch=0)
+    
     # Training:
     for epoch in range(start_epoch, config["EPOCHS"]):
         if is_distributed():
@@ -185,6 +187,7 @@ def eval_model(config: dict, model: MeMOTR, outputs_dir: str, val_split: str, wr
     motion_max_length = config["MOTION_MAX_LENGTH"]
     motion_lambda = config["MOTION_LAMBDA"]
     miss_tolerance = config["MISS_TOLERANCE"]
+    interval=config["EVAL_INTERVAL"] if "EVAL_INTERVAL" in config else 1
 
     data_dir = os.path.join(data_root, dataset_name)
     if dataset_name == "DanceTrack" or dataset_name == "SportsMOT":
@@ -222,7 +225,8 @@ def eval_model(config: dict, model: MeMOTR, outputs_dir: str, val_split: str, wr
             motion_max_length=motion_max_length,
             motion_lambda=motion_lambda,
             miss_tolerance=miss_tolerance,
-            progress_bar=False
+            progress_bar=False,
+            interval=interval
         )
         submitter.run()
 
@@ -337,7 +341,7 @@ def train_one_epoch(model: MeMOTR, train_states: dict, max_norm: float,
                 )
                 if frame_idx < len(batch["imgs"][0]) - 1:
                     tracks = get_model(model).postprocess_single_frame(
-                        previous_tracks, new_tracks, unmatched_dets)
+                        previous_tracks, new_tracks, unmatched_dets, intervals=batch["intervals"])
             else:
                 with torch.no_grad():
                     frame = [fs[frame_idx] for fs in batch["imgs"]]
@@ -352,7 +356,7 @@ def train_one_epoch(model: MeMOTR, train_states: dict, max_norm: float,
                     )
                     if frame_idx < len(batch["imgs"][0]) - 1:
                         tracks = get_model(model).postprocess_single_frame(
-                            previous_tracks, new_tracks, unmatched_dets, no_augment=frame_idx < no_grad_frames-1)
+                            previous_tracks, new_tracks, unmatched_dets, intervals=batch["intervals"], no_augment=frame_idx < no_grad_frames-1)
 
         loss_dict, log_dict = criterion.get_mean_by_n_gts()
         loss = criterion.get_sum_loss_dict(loss_dict=loss_dict)

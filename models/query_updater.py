@@ -89,6 +89,7 @@ class QueryUpdater(nn.Module):
                 previous_tracks: List[TrackInstances],
                 new_tracks: List[TrackInstances],
                 unmatched_dets: List[TrackInstances] | None,
+                intervals = List[int],
                 no_augment: bool = False):
         tracks = self.select_active_tracks(previous_tracks, new_tracks, unmatched_dets, no_augment=no_augment)
         tracks = self.update_tracks_embedding(tracks=tracks)
@@ -285,6 +286,7 @@ class SambaQueryUpdater(nn.Module):
                 num_layers: int,
                 conv_dim: int,
                 with_self_attn: bool,
+                fps_invariant: bool,
                 tp_drop_ratio: float,
                 fp_insert_ratio: float,
                 dropout: float,
@@ -310,6 +312,7 @@ class SambaQueryUpdater(nn.Module):
         self.num_layers = num_layers
         self.conv_dim = conv_dim
         self.with_self_attn = with_self_attn
+        self.fps_invariant = fps_invariant
 
         self.use_checkpoint = use_checkpoint
         self.use_dab = use_dab
@@ -361,13 +364,14 @@ class SambaQueryUpdater(nn.Module):
                 previous_tracks: List[TrackInstances],
                 new_tracks: List[TrackInstances],
                 unmatched_dets: List[TrackInstances] | None,
+                intervals = List[int],
                 no_augment: bool = False):
         tracks = self.select_active_tracks(previous_tracks, new_tracks, unmatched_dets, no_augment=no_augment)
-        tracks = self.update_tracks_embedding(tracks=tracks)
+        tracks = self.update_tracks_embedding(tracks=tracks, intervals=intervals)
 
         return tracks
     
-    def update_tracks_embedding(self, tracks: List[TrackInstances]):
+    def update_tracks_embedding(self, tracks: List[TrackInstances], intervals: List[int]):
         for b in range(len(tracks)):
             scores = torch.max(logits_to_scores(logits=tracks[b].logits), dim=1).values
             is_pos = scores > self.update_threshold
@@ -394,13 +398,17 @@ class SambaQueryUpdater(nn.Module):
             output_embed = tracks[b].output_embed
 
             # Samba
+            rate = 1 / intervals[b] if self.fps_invariant else 1  
+            # correct formula should be rate = sequence_fps / sampling_interval, but we can assume a constant for a given dataset. 
+            # NB: if you are training a general tracker, make sure to use the complete formula aware of the sequence fps  
             hidden_state = tracks[b].hidden_state
             conv_history = tracks[b].conv_history
             output_embed, hidden_state, conv_history = self.samba(
                 output_embed.unsqueeze(0),
                 hidden_state.unsqueeze(0),
                 conv_history.unsqueeze(0),
-                output_pos.unsqueeze(0))
+                output_pos.unsqueeze(0),
+                rate=rate)
             tracks[b].hidden_state = hidden_state.squeeze(0)
             tracks[b].conv_history = conv_history.squeeze(0)
             output_embed = output_embed.squeeze(0)
@@ -525,6 +533,87 @@ class SambaQueryUpdater(nn.Module):
         return tracks
 
 
+class MaskedSambaQueryUpdater(SambaQueryUpdater):
+    def __init__(self, *args, mask_pos: bool = False, update_only_pos: bool = False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.update_only_pos = update_only_pos
+        self.mask_pos = mask_pos
+        
+    def update_tracks_embedding(self, tracks: List[TrackInstances], intervals: List[int]):
+        for b in range(len(tracks)):
+            scores = torch.max(logits_to_scores(logits=tracks[b].logits), dim=1).values
+            is_pos = scores > self.update_threshold
+            if self.visualize:
+                os.makedirs("./outputs/visualize_tmp/query_updater/", exist_ok=True)
+                torch.save(tracks[b].ref_pts.cpu(), "./outputs/visualize_tmp/query_updater/current_ref_pts.tensor")
+                # torch.save(tracks[b].query_embed[:, :].cpu(),
+                #            "./outputs/visualize_tmp/query_updater/current_query_pos.tensor")
+                # torch.save(tracks[b].query_embed[:, :].cpu(),
+                #            "./outputs/visualize_tmp/query_updater/current_query_feat.tensor")
+                torch.save(tracks[b].query_embed.cpu(),
+                           "./outputs/visualize_tmp/query_updater/current_query_feat.tensor")
+                torch.save(tracks[b].ids.cpu(), "./outputs/visualize_tmp/query_updater/current_ids.tensor")
+                torch.save(tracks[b].labels.cpu(), "./outputs/visualize_tmp/query_updater/current_labels.tensor")
+                torch.save(scores.cpu(), "./outputs/visualize_tmp/query_updater/current_scores.tensor")
+            # rely on previous position for low-confidence boxes
+            if self.use_dab:
+                tracks[b].ref_pts[is_pos] = inverse_sigmoid(tracks[b].boxes[is_pos].detach().clone())
+            else:
+                tracks[b].ref_pts[is_pos] = inverse_sigmoid(tracks[b].boxes[is_pos].detach().clone())
+
+            output_pos = pos_to_pos_embed(tracks[b].ref_pts.sigmoid(), num_pos_feats=self.hidden_dim//2)
+            output_pos = self.query_pos_head(output_pos)
+            output_embed = tracks[b].output_embed
+
+            # Mask embeddings and positions of low-confidence boxes (likely occluded)
+            output_embed[~is_pos] = 0.0 * output_embed[~is_pos]
+            if self.mask_pos:
+                output_pos[~is_pos] = 0.0 * output_pos[~is_pos]
+
+            # Samba
+            rate = 1 / intervals[b] if self.fps_invariant else 1  
+            # correct formula should be rate = sequence_fps / sampling_interval, but we can assume a constant for a given dataset. 
+            # NB: if you are training a general tracker, make sure to use the complete formula aware of the sequence fps  
+            hidden_state = tracks[b].hidden_state
+            conv_history = tracks[b].conv_history
+            output_embed, hidden_state, conv_history = self.samba(
+                output_embed.unsqueeze(0),
+                hidden_state.unsqueeze(0),
+                conv_history.unsqueeze(0),
+                output_pos.unsqueeze(0),
+                rate=rate)
+            tracks[b].hidden_state = hidden_state.squeeze(0)
+            tracks[b].conv_history = conv_history.squeeze(0)
+            output_embed = output_embed.squeeze(0)
+
+            # unlike MeMOTR, we update the embed also for low-confidence boxes since Samba takes care of masked observations from context
+            update = is_pos if self.update_only_pos else scores >= 0.0
+            if self.use_dab:
+                tracks[b].query_embed[update] = output_embed[update]
+            else:
+                tracks[b].query_embed[:, self.hidden_dim:][update] = output_embed[update]
+                # Update query pos, which is not appeared in DAB-D-DETR framework:
+                new_query_pos = self.linear_pos2(self.activation(self.linear_pos1(output_embed)))
+                query_pos = tracks[b].query_embed[:, :self.hidden_dim]
+                query_pos = query_pos + new_query_pos
+                query_pos = self.norm_pos(query_pos)
+                tracks[b].query_embed[:, :self.hidden_dim][update] = query_pos[update]
+
+            if self.visualize:
+                torch.save(tracks[b].ref_pts.cpu(), "./outputs/visualize_tmp/query_updater/next_ref_pts.tensor")
+                # torch.save(tracks[b].query_embed[:, :self.hidden_dim].cpu(),
+                #            "./outputs/visualize_tmp/query_updater/next_query_pos.tensor")
+                # torch.save(tracks[b].query_embed[:, self.hidden_dim:].cpu(),
+                #            "./outputs/visualize_tmp/query_updater/next_query_feat.tensor")
+                torch.save(tracks[b].query_embed.cpu(),
+                           "./outputs/visualize_tmp/query_updater/next_query_feat.tensor")
+                torch.save(tracks[b].ids.cpu(), "./outputs/visualize_tmp/query_updater/next_ids.tensor")
+                torch.save(tracks[b].labels.cpu(), "./outputs/visualize_tmp/query_updater/next_labels.tensor")
+                torch.save(scores.cpu(), "./outputs/visualize_tmp/query_updater/next_scores.tensor")
+
+        return tracks
+    
+
 def build(config: dict):
     if config["QUERY_UPDATER"] == "QueryUpdater":
         return QueryUpdater(
@@ -548,13 +637,14 @@ def build(config: dict):
     elif config["QUERY_UPDATER"] == "SambaQueryUpdater":
         return SambaQueryUpdater(
                 hidden_dim=config["HIDDEN_DIM"],
-                ffn_dim=config["FFN_DIM"],
-                num_heads=config["NUM_HEADS"],
+                ffn_dim=config["SAMBA_FFN_DIM"],
+                num_heads=config["SAMBA_NUM_HEADS"],
                 state_dim=config["STATE_DIM"],
                 expand=config["EXPAND"],
                 num_layers=config["SAMBA_NUM_LAYERS"],
                 conv_dim=config["CONV_DIM"],
                 with_self_attn=config["WITH_SELF_ATTN"],
+                fps_invariant=config["FPS_INVARIANT"],
                 dropout=config["DROPOUT"],
                 tp_drop_ratio=config["TP_DROP_RATE"] if "TP_DROP_RATE" in config else 0.0,
                 fp_insert_ratio=config["FP_INSERT_RATE"] if "FP_INSERT_RATE" in config else 0.0,
@@ -563,7 +653,28 @@ def build(config: dict):
                 update_threshold=config["UPDATE_THRESH"],
                 long_memory_lambda=config["LONG_MEMORY_LAMBDA"],
                 visualize=config["VISUALIZE"],
-
+            )
+    elif config["QUERY_UPDATER"] == "MaskedSambaQueryUpdater":
+        return MaskedSambaQueryUpdater(
+                hidden_dim=config["HIDDEN_DIM"],
+                ffn_dim=config["SAMBA_FFN_DIM"],
+                num_heads=config["SAMBA_NUM_HEADS"],
+                state_dim=config["STATE_DIM"],
+                expand=config["EXPAND"],
+                num_layers=config["SAMBA_NUM_LAYERS"],
+                conv_dim=config["CONV_DIM"],
+                with_self_attn=config["WITH_SELF_ATTN"],
+                fps_invariant=config["FPS_INVARIANT"],
+                dropout=config["DROPOUT"],
+                tp_drop_ratio=config["TP_DROP_RATE"] if "TP_DROP_RATE" in config else 0.0,
+                fp_insert_ratio=config["FP_INSERT_RATE"] if "FP_INSERT_RATE" in config else 0.0,
+                use_checkpoint=config["USE_CHECKPOINT"],
+                use_dab=config["USE_DAB"],
+                update_threshold=config["UPDATE_THRESH"],
+                long_memory_lambda=config["LONG_MEMORY_LAMBDA"],
+                visualize=config["VISUALIZE"],
+                mask_pos=config["MASK_POS"],
+                update_only_pos=config["UPDATE_ONLY_POS"],
             )
     else:
         ValueError(f"Do not support query updater '{config['QUERY_UPDATER']}'")

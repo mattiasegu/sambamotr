@@ -155,7 +155,7 @@ class SambaBlock(nn.Module):
         ]
         self.norms = ModuleList(norms_list)
 
-    def forward(self, inputs, hidden_states, conv_history, rate=1):
+    def forward(self, inputs, hidden_states, conv_history):
         """Mamba block forward. This looks the same as Figure 3 in Section 3.4 in the Mamba paper [1].
     
         Notation:
@@ -202,7 +202,7 @@ class SambaBlock(nn.Module):
         
         inputs = F.silu(inputs)
 
-        outputs, hidden_states = self.ssm(inputs, hidden_states, rate)
+        outputs, hidden_states = self.ssm(inputs, hidden_states)
         
         outputs = outputs * F.silu(res)
         
@@ -210,7 +210,7 @@ class SambaBlock(nn.Module):
 
         return outputs, hidden_states, conv_history
     
-    def ssm(self, inputs, hidden_states, rate=1):
+    def ssm(self, inputs, hidden_states):
         """Runs the SSM. See:
             - Algorithm 2 in Section 3.2 in the Mamba paper [1]
             - run_SSM(A, B, C, u) in The Annotated S4 [2]
@@ -238,9 +238,9 @@ class SambaBlock(nn.Module):
         inputs_dbl = self.x_proj(inputs)  # (b, k, dt_rank + 2*n)
         
         (delta, B, C) = inputs_dbl.split(split_size=[self.dt_rank, n, n], dim=-1)  # delta: (b, k, dt_rank). B, C: (b, k, n)
-        delta = F.softplus(self.dt_proj(delta)) / rate  # (b, l, d_in)
-        # TODO: check if / rate or * rate
-
+        # delta = F.softplus(self.dt_proj(delta))  # (b, l, d_in)
+        delta = F.softplus(self.dt_proj.bias)  # (b, l, d_in)  # fixed learnable delta
+        
         outputs, hidden_states = self.single_selective_scan(inputs, hidden_states, delta, A, B, C, D)  # This is similar to run_SSM(A, B, C, u) in The Annotated S4 [2]
         
         return outputs, hidden_states
@@ -344,7 +344,7 @@ class ResidualBlock(nn.Module):
                                 ffn_cfg)
         self.norm = nn.LayerNorm(d_model)
         
-    def forward(self, inputs, hidden_states, conv_history, rate):
+    def forward(self, inputs, hidden_states, conv_history):
         """
         Args:
             x: shape (b, l, d)    (See Glossary at top for definitions of b, l, d_in, n...)
@@ -365,13 +365,13 @@ class ResidualBlock(nn.Module):
             
         """
         # TODO: with or without norm?
-        outputs, hidden_states, conv_history = self.mixer(self.norm(inputs), hidden_states, conv_history, rate)
+        outputs, hidden_states, conv_history = self.mixer(self.norm(inputs), hidden_states, conv_history)
         outputs = outputs + inputs
 
         return outputs, hidden_states, conv_history
 
 
-class Samba(nn.Module):
+class S4Samba(nn.Module):
     """Full Samba model.
 
     This module implements the full Samba (Synchronized Mamba) model, which
@@ -422,7 +422,7 @@ class Samba(nn.Module):
                                      for _ in range(num_layers)])
         self.norm_f = nn.LayerNorm(d_model)
 
-    def forward(self, query, hidden_states, conv_history, query_pos=None, rate=1):
+    def forward(self, query, hidden_states, conv_history, query_pos=None):
         """
         Args:
             query (long tensor): shape (b, k, d_in), where d_in == d_model
@@ -448,7 +448,7 @@ class Samba(nn.Module):
                 query = query + query_pos
             _conv_history = conv_history[:,:,i,:,:]
             query, hidden_states, _conv_history = layer(
-                query, hidden_states, _conv_history, rate)
+                query, hidden_states, _conv_history)
             out_conv_history[:,:,i,:,:] = _conv_history
         
         outputs = self.norm_f(query)

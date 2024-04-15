@@ -66,12 +66,13 @@ class DanceTrack(MOTDataset):
 
     def __getitem__(self, item):
         vid, begin_frame = self.sample_begin_frames[item]
-        frame_idxs = self.sample_frames_idx(vid=vid, begin_frame=begin_frame)
+        frame_idxs, interval = self.sample_frames_idx(vid=vid, begin_frame=begin_frame)
         imgs, infos = self.get_multi_frames(vid=vid, idxs=frame_idxs)
         if self.transform is not None:
             imgs, infos = self.transform(imgs, infos)
         return {
             "imgs": imgs,
+            "interval": interval,
             "infos": infos
         }
 
@@ -86,7 +87,7 @@ class DanceTrack(MOTDataset):
             max_interval = floor(remain_frames / (self.sample_length - 1))
             interval = min(randint(1, self.sample_interval), max_interval)
             frame_idxs = [begin_frame + interval * i for i in range(self.sample_length)]
-            return frame_idxs
+            return frame_idxs, interval
         else:
             raise ValueError(f"Sample mode {self.sample_mode} is not supported.")
 

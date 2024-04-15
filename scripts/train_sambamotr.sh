@@ -1,6 +1,7 @@
 #!/bin/bash
 
 CONFIG=./configs/sambamotr/train_dancetrack.yaml
+# CONFIG=configs/masked_sambamotr/train_dancetrack.yaml
 OUT_DIR=./outputs/tmp/sambamotr_dancetrack/
 BS=1 
 DATA_ROOT=/BS/diffusion-track/nobackup/data/mot/

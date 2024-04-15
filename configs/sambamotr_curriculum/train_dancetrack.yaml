@@ -40,6 +40,7 @@ EVAL_MODEL:
 EVAL_PORT:
 EVAL_THREADS: 1
 EVAL_DATA_SPLIT: val
+EVAL_INTERVAL: 1
 
 # About data processing
 DATASET: DanceTrack
@@ -81,11 +82,12 @@ STATE_DIM: 8
 EXPAND: 2
 SAMBA_NUM_LAYERS: 2
 CONV_DIM: 4
-WITH_SELF_ATTN: True
+FPS_INVARIANT: True
+
 # other possible ablations: (i) layer type (e.g. S4 or S6)
-# SAMBA_HIDDEN_DIM: 256
-# SAMBA_FFN_DIM: 2048
-# SAMBA_NUM_HEADS: 8
+WITH_SELF_ATTN: True
+SAMBA_FFN_DIM: 2048
+SAMBA_NUM_HEADS: 8
 
 # Sampling setting
 SAMPLE_STEPS: [6, 10, 14]

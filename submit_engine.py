@@ -29,10 +29,12 @@ class Submitter:
                  motion_min_length: int = 3, motion_max_length: int = 5,
                  use_dab: bool = False,
                  visualize: bool = False,
-                 progress_bar: bool = True):
+                 progress_bar: bool = True,
+                 interval: int = 1):
         self.dataset_name = dataset_name
         self.seq_name = seq_name
         self.seq_dir = path.join(split_dir, seq_name)
+        self.interval = interval
         self.outputs_dir = outputs_dir
         self.predict_dir = path.join(self.outputs_dir, "tracker")
         print(f"Predict dir is {self.predict_dir}")
@@ -44,7 +46,7 @@ class Submitter:
                                       visualize=visualize, use_dab=use_dab)
         self.result_score_thresh = result_score_thresh
         self.motion_lambda = motion_lambda
-        self.dataset = SeqDataset(seq_dir=self.seq_dir)
+        self.dataset = SeqDataset(seq_dir=self.seq_dir, interval=self.interval)
         self.dataloader = DataLoader(self.dataset, batch_size=1, num_workers=4, shuffle=False)
         self.device = next(self.model.parameters()).device
         self.use_dab = use_dab
@@ -75,6 +77,7 @@ class Submitter:
             dataloader = self.dataloader
 
         for i, ((image, ori_image), info) in enumerate(dataloader):
+            idx = i * self.interval
             # image: (1, C, H, W); ori_image: (1, H, W, C)
             frame = tensor_list_to_nested_tensor([image[0]]).to(self.device)
             res = self.model(frame=frame, tracks=tracks)
@@ -82,7 +85,8 @@ class Submitter:
                 model_outputs=res,
                 tracks=tracks
             )  # TODO: check tracks usage
-            tracks: List[TrackInstances] = get_model(self.model).postprocess_single_frame(previous_tracks, new_tracks, None)
+            tracks: List[TrackInstances] = get_model(self.model).postprocess_single_frame(
+                previous_tracks, new_tracks, None, intervals=[1])
 
             # We do not use this...
             # but I do not want to remove this part.
@@ -110,16 +114,16 @@ class Submitter:
             tracks_result.boxes = box_cxcywh_to_xyxy(tracks_result.boxes)
             tracks_result.boxes = (tracks_result.boxes * torch.as_tensor([ori_w, ori_h, ori_w, ori_h], dtype=torch.float))
             if self.dataset_name == "BDD100K":
-                self.update_results(tracks_result=tracks_result, frame_idx=i, results=bdd100k_results, img_path=info[0])
+                self.update_results(tracks_result=tracks_result, frame_idx=idx, results=bdd100k_results, img_path=info[0])
             else:
-                self.write_results(tracks_result=tracks_result, frame_idx=i)
+                self.write_results(tracks_result=tracks_result, frame_idx=idx)
 
             if self.visualize:
-                os.makedirs(f"./outputs/visualize_tmp/frame_{i+1}/", exist_ok=False)
-                os.system(f"mv ./outputs/visualize_tmp/query_updater/ ./outputs/visualize_tmp/frame_{i+1}/")
-                os.system(f"mv ./outputs/visualize_tmp/decoder/ ./outputs/visualize_tmp/frame_{i+1}/")
-                os.system(f"mv ./outputs/visualize_tmp/memotr/ ./outputs/visualize_tmp/frame_{i+1}/")
-                os.system(f"mv ./outputs/visualize_tmp/runtime_tracker/ ./outputs/visualize_tmp/frame_{i+1}/")
+                os.makedirs(f"./outputs/visualize_tmp/frame_{idx+1}/", exist_ok=False)
+                os.system(f"mv ./outputs/visualize_tmp/query_updater/ ./outputs/visualize_tmp/frame_{idx+1}/")
+                os.system(f"mv ./outputs/visualize_tmp/decoder/ ./outputs/visualize_tmp/frame_{idx+1}/")
+                os.system(f"mv ./outputs/visualize_tmp/memotr/ ./outputs/visualize_tmp/frame_{idx+1}/")
+                os.system(f"mv ./outputs/visualize_tmp/runtime_tracker/ ./outputs/visualize_tmp/frame_{idx+1}/")
 
         if self.visualize:
             visualize_save_dir = os.path.join("./outputs/visualize/", self.seq_name)
@@ -221,6 +225,7 @@ def submit(config: dict):
     motion_max_length = config["MOTION_MAX_LENGTH"]
     motion_lambda = config["MOTION_LAMBDA"]
     miss_tolerance = config["MISS_TOLERANCE"]
+    interval=config["EVAL_INTERVAL"] if "EVAL_INTERVAL" in config else 1
 
     model = build_model(config=train_config)
     load_checkpoint(
@@ -259,7 +264,8 @@ def submit(config: dict):
             motion_min_length=motion_min_length,
             motion_max_length=motion_max_length,
             motion_lambda=motion_lambda,
-            miss_tolerance=miss_tolerance
+            miss_tolerance=miss_tolerance,
+            interval=interval
         )
         submitter.run()
     return
