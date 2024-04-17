@@ -1,5 +1,5 @@
 #!/bin/bash
-JOB_NAME=mambamotr_dancetrack_only_pos_no_mask_pos
+JOB_NAME=masked_mambamotr_dancetrack_only_pos_no_mask_pos
 CONFIG=./configs/masked_mambamotr/def_detr/train_dancetrack_only_pos_no_mask_pos.yaml
 
 TIME=48:00:00  # TIME=(24:00:00)

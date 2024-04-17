@@ -59,7 +59,7 @@ REVERSE_CLIP: 0.0
 # About model
 BACKBONE: resnet50
 HIDDEN_DIM: 256
-FFN_DIM: 2048
+FFN_DIM: 1024
 NUM_FEATURE_LEVELS: 4
 NUM_HEADS: 8
 NUM_ENC_POINTS: 4
@@ -86,7 +86,7 @@ FPS_INVARIANT: False
 
 # other possible ablations: (i) layer type (e.g. S4 or S6)
 WITH_SELF_ATTN: False
-SAMBA_FFN_DIM: 2048
+SAMBA_FFN_DIM: 1024
 SAMBA_NUM_HEADS: 8
 
 # Sampling setting
