@@ -286,6 +286,7 @@ class SambaQueryUpdater(nn.Module):
                 num_layers: int,
                 conv_dim: int,
                 with_self_attn: bool,
+                with_self_attn_prior: bool,
                 fps_invariant: bool,
                 tp_drop_ratio: float,
                 fp_insert_ratio: float,
@@ -313,6 +314,7 @@ class SambaQueryUpdater(nn.Module):
         self.num_layers = num_layers
         self.conv_dim = conv_dim
         self.with_self_attn = with_self_attn
+        self.with_self_attn_prior = with_self_attn_prior
         self.fps_invariant = fps_invariant
 
         self.use_checkpoint = use_checkpoint
@@ -330,7 +332,8 @@ class SambaQueryUpdater(nn.Module):
                                 d_conv=conv_dim,
                                 conv_bias=True,
                                 bias=False,
-                                with_self_attn=True,
+                                with_self_attn=with_self_attn,
+                                with_self_attn_prior=with_self_attn_prior,
                                 self_attn_cfg=dict(
                                     embed_dims=hidden_dim, num_heads=self.num_heads, dropout=0.0),
                                 ffn_cfg=dict(
@@ -693,6 +696,7 @@ def build(config: dict):
                 num_layers=config["SAMBA_NUM_LAYERS"],
                 conv_dim=config["CONV_DIM"],
                 with_self_attn=config["WITH_SELF_ATTN"],
+                with_self_attn_prior=config["WITH_SELF_ATTN_PRIOR"] if "WITH_SELF_ATTN_PRIOR" in config else False,
                 fps_invariant=config["FPS_INVARIANT"],
                 dropout=config["DROPOUT"],
                 tp_drop_ratio=config["TP_DROP_RATE"] if "TP_DROP_RATE" in config else 0.0,
@@ -714,6 +718,7 @@ def build(config: dict):
                 num_layers=config["SAMBA_NUM_LAYERS"],
                 conv_dim=config["CONV_DIM"],
                 with_self_attn=config["WITH_SELF_ATTN"],
+                with_self_attn_prior=config["WITH_SELF_ATTN_PRIOR"] if "WITH_SELF_ATTN_PRIOR" in config else False,
                 fps_invariant=config["FPS_INVARIANT"],
                 dropout=config["DROPOUT"],
                 tp_drop_ratio=config["TP_DROP_RATE"] if "TP_DROP_RATE" in config else 0.0,

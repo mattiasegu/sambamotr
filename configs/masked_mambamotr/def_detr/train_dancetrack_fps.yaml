@@ -85,6 +85,7 @@ CONV_DIM: 4
 FPS_INVARIANT: True
 # other possible ablations: (i) layer type (e.g. S4 or S6)
 WITH_SELF_ATTN: False
+WITH_SELF_ATTN_PRIOR: False
 # SAMBA_FFN_DIM: 2048
 # SAMBA_NUM_HEADS: 8
 SAMBA_FFN_DIM: 1024

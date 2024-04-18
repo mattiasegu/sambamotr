@@ -58,6 +58,8 @@ class SambaBlock(nn.Module):
         bias (bool): whether linear layers have bias term. Defaults to True.
         with_self_attn (bool): whether to use self attention layers to
             syncronize multiple Mamba instances. Defaults to True.
+        with_self_attn_prior (bool): whether to apply self attention only on 
+            the prior Ax. Defaults to False.
         self_attn_cfg (:obj:`ConfigDict` or dict, optional):
             Config for self-attention.
         ffn_cfg (:obj:`ConfigDict` or dict, optional): Config for FFN.
@@ -87,6 +89,7 @@ class SambaBlock(nn.Module):
                  conv_bias: bool = True,
                  bias: bool = False,
                  with_self_attn: bool = True,
+                 with_self_attn_prior: bool = False,
                  self_attn_cfg: dict = dict(
                      embed_dims=256, num_heads=8, dropout=0.0),
                  ffn_cfg: dict = dict(
@@ -110,6 +113,7 @@ class SambaBlock(nn.Module):
         self.dt_rank = dt_rank
 
         self.with_self_attn = with_self_attn
+        self.with_self_attn_prior = with_self_attn_prior
 
         self.in_proj = nn.Linear(d_model, d_inner * 2, bias=bias)
 
@@ -141,7 +145,9 @@ class SambaBlock(nn.Module):
             self_attn_cfg = self_attn_cfg.copy()
             self_attn_cfg['embed_dims'] *= expansion_factor
             self.self_attn = nn.MultiheadAttention(
-                embed_dim=self_attn_cfg['embed_dims'], num_heads=8, batch_first=True)
+                embed_dim=self_attn_cfg['embed_dims'],
+                num_heads=self_attn_cfg['num_heads'],
+                batch_first=True)
         if ffn_cfg is not None:
             ffn_cfg = ffn_cfg.copy()
             ffn_cfg['embed_dims'] *= expansion_factor
@@ -239,12 +245,24 @@ class SambaBlock(nn.Module):
         
         (delta, B, C) = inputs_dbl.split(split_size=[self.dt_rank, n, n], dim=-1)  # delta: (b, k, dt_rank). B, C: (b, k, n)
         delta = F.softplus(self.dt_proj(delta)) / rate  # (b, l, d_in)
-        # TODO: check if / rate or * rate
 
         outputs, hidden_states = self.single_selective_scan(inputs, hidden_states, delta, A, B, C, D)  # This is similar to run_SSM(A, B, C, u) in The Annotated S4 [2]
         
         return outputs, hidden_states
     
+    def sync_hidden_states(self, x):
+        """ Syncronize hidden states across multiple SSM instances.
+
+        Args:
+            x: hidden states of shape ( b k (d_in n) )
+        """ 
+        x = self.self_attn(query=x, key=x, value=x)[0]
+        x = self.norms[0](x)
+        x = self.ffn(x)
+        x = self.norms[1](x)
+        return x
+
+
     def single_selective_scan(self, u, x, delta, A, B, C, D):
         """Does selective scan algorithm. See:
             - Section 2 State Space Models in the Mamba paper [1]
@@ -278,16 +296,20 @@ class SambaBlock(nn.Module):
         deltaB_u = einsum(delta, B, u, 'b k d_in, b k n, b k d_in -> b k d_in n')
         
         # Perform one pass of the selective scan (see scan_SSM() in The Annotated S4 [2])
-        x = deltaA * x + deltaB_u
-
-        # Syncronize Mambas
-        x = rearrange(x, 'b k d_in n -> b k (d_in n)')
         if self.with_self_attn:
-            x = self.self_attn(query=x, key=x, value=x)[0]
-            x = self.norms[0](x)
-            x = self.ffn(x)
-            x = self.norms[1](x)
-        x = rearrange(x, 'b k (d_in n) -> b k d_in n', d_in=d_in, n=n)
+            if self.with_self_attn_prior:
+                x = deltaA * x
+                x = rearrange(x, 'b k d_in n -> b k (d_in n)')
+                x = self.sync_hidden_states(x)
+                x = rearrange(x, 'b k (d_in n) -> b k d_in n', d_in=d_in, n=n)
+                x = x + deltaB_u
+            else:
+                x = deltaA * x + deltaB_u
+                x = rearrange(x, 'b k d_in n -> b k (d_in n)')
+                x = self.sync_hidden_states(x)
+                x = rearrange(x, 'b k (d_in n) -> b k d_in n', d_in=d_in, n=n)
+        else:
+            x = deltaA * x + deltaB_u
 
         # Predict
         y = einsum(x, C, 'b k d_in n, b k n -> b k d_in')
@@ -323,6 +345,7 @@ class ResidualBlock(nn.Module):
                  conv_bias: bool = True,
                  bias: bool = False,
                  with_self_attn=True,
+                 with_self_attn_prior=False,
                  self_attn_cfg: dict = dict(
                      embed_dims=256, num_heads=8, dropout=0.0),
                  ffn_cfg: dict = dict(
@@ -340,6 +363,7 @@ class ResidualBlock(nn.Module):
                                 conv_bias,
                                 bias,
                                 with_self_attn,
+                                with_self_attn_prior,
                                 self_attn_cfg,
                                 ffn_cfg)
         self.norm = nn.LayerNorm(d_model)
@@ -408,6 +432,7 @@ class Samba(nn.Module):
                      conv_bias=True,
                      bias=False,
                      with_self_attn=True,
+                     with_self_attn_prior=False,
                      self_attn_cfg=dict(
                          embed_dims=64, num_heads=8, dropout=0.0),
                      ffn_cfg=dict(
