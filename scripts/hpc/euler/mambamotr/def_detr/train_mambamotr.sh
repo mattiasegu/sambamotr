@@ -1,8 +1,10 @@
 #!/bin/bash
-JOB_NAME=mambamotr_dancetrack
-CONFIG=./configs/mambamotr/def_detr/train_dancetrack.yaml
+# JOB_NAME=mambamotr_dancetrack
+# CONFIG=./configs/mambamotr/def_detr/train_dancetrack.yaml
+JOB_NAME=mambamotr_dancetrack_masked_class
+CONFIG=./configs/masked_mambamotr/def_detr/train_dancetrack.yaml
 
-TIME=48:00:00  # TIME=(24:00:00)
+TIME=72:00:00  # TIME=(24:00:00)
 GPUS=8
 CPUS=16
 MEM_PER_CPU=10000

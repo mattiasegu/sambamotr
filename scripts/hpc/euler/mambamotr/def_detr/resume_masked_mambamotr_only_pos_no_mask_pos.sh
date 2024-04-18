@@ -1,5 +1,6 @@
 #!/bin/bash
-JOB_NAME=masked_mambamotr_dancetrack_only_pos_no_mask_pos
+# JOB_NAME=masked_mambamotr_dancetrack_only_pos_no_mask_pos
+JOB_NAME=mambamotr_dancetrack_only_pos_no_mask_pos
 CONFIG=./configs/masked_mambamotr/def_detr/train_dancetrack_only_pos_no_mask_pos.yaml
 
 TIME=60:00:00  # TIME=(24:00:00)
@@ -29,7 +30,7 @@ LR_POINTS=0.00001
 JOB_NAME=${JOB_NAME}_lr_${LR}
 
 OUT_DIR=/cluster/work/cvl/segum/workspaces/sambamotr/outputs/${JOB_NAME}/
-CHECKPOINT=$OUT_DIR/last_checkpoint.pth
+CHECKPOINT=${OUT_DIR}last_checkpoint.pth
 BS=1 
 DATA_ROOT=/cluster/work/cvl/segum/datasets/mot/data/
 
