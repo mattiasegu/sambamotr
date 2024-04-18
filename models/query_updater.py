@@ -560,6 +560,11 @@ class MaskedSambaQueryUpdater(SambaQueryUpdater):
         self.with_masking = with_masking
         self.with_ref_pts_residual = with_ref_pts_residual
         
+        if self.with_ref_pts_residual:
+            self.bbox_embed = MLP(input_dim=self.hidden_dim, hidden_dim=self.hidden_dim, output_dim=4, num_layers=3)
+            nn.init.constant_(self.bbox_embed.layers[-1].weight.data, 0)
+            nn.init.constant_(self.bbox_embed.layers[-1].bias.data, 0)
+
     def update_tracks_embedding(self, tracks: List[TrackInstances], intervals: List[int]):
         for b in range(len(tracks)):
             scores = torch.max(logits_to_scores(logits=tracks[b].logits), dim=1).values
@@ -634,6 +639,14 @@ class MaskedSambaQueryUpdater(SambaQueryUpdater):
                 query_pos = query_pos + new_query_pos
                 query_pos = self.norm_pos(query_pos)
                 tracks[b].query_embed[:, :self.hidden_dim][update] = query_pos[update]
+
+            if self.with_ref_pts_residual:
+                tmp = self.bbox_embed(output_embed)
+                if tracks[b].ref_pts.shape[-1] == 4:
+                    tracks[b].ref_pts[is_pos] = tmp[is_pos] + tracks[b].ref_pts[is_pos]
+                else:
+                    assert tracks[b].ref_pts.shape[-1] == 2
+                    tracks[b].ref_pts[is_pos] = tmp[..., :2][is_pos] + tracks[b].ref_pts[is_pos]
 
             if self.visualize:
                 torch.save(tracks[b].ref_pts.cpu(), "./outputs/visualize_tmp/query_updater/next_ref_pts.tensor")
