@@ -3,7 +3,7 @@
 JOB_NAME=debug_memotr_dancetrack
 # CONFIG=./configs/sambamotr/train_dancetrack.yaml
 # CONFIG=./configs/mambamotr/def_detr/train_dancetrack.yaml
-CONFIG=configs/masked_mambamotr/def_detr/train_dancetrack_residual.yaml
+CONFIG=./configs/masked_mambamotr/def_detr/train_dancetrack_residual_masking_only_pos.yaml
 OUT_DIR=./outputs/tmp/${JOB_NAME}/
 BS=1 
 DATA_ROOT=/BS/diffusion-track/nobackup/data/mot/

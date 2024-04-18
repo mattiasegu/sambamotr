@@ -1,6 +1,6 @@
-# MeMOTR
+# SambaMOTR
 
-The official implementation of [MeMOTR: Long-Term Memory-Augmented Transformer for Multi-Object Tracking](https://arxiv.org/abs/2307.15700), ICCV 2023.
+The official implementation of [SambaMOTR](), NeurIPS 2024.
 
 Authors: [Ruopeng Gao](https://ruopenggao.com), [Limin Wang](https://wanglimin.github.io/).
 
@@ -102,9 +102,15 @@ DATADIR/
 ```
 
 
-## Pretrain
+## Pretrain (Deformable DETR)
 
-We initialize our model with the official DAB-Deformable-DETR (with R50 backbone) weights pretrained on the COCO dataset, you can also download the checkpoint we used [here](https://drive.google.com/file/d/17FxIGgIZJih8LWkGdlIOe9ZpVZ9IRxSj/view?usp=sharing). And then put the checkpoint at the root of this project dir.
+
+
+We initialize our model with the official Deformable-DETR (with R50 backbone) weights pretrained on the COCO dataset, you can also download the checkpoint we used [here](https://drive.google.com/file/d/1JYKyRYzUH7uo9eVfDaVCiaIGZb5YTCuI/view?usp=sharing). And then put the checkpoint at `pretrained/deformable_detr.pth`.
+
+## Pretrain (DAB-DETR)
+
+We initialize our model with the official DAB-Deformable-DETR (with R50 backbone) weights pretrained on the COCO dataset, you can also download the checkpoint we used [here](https://drive.google.com/file/d/17FxIGgIZJih8LWkGdlIOe9ZpVZ9IRxSj/view?usp=sharing). And then put the checkpoint at `pretrained/dab_deformable_detr.pth`.
 
 ## Scripts on DanceTrack
 

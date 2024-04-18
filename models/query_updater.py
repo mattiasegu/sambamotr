@@ -554,10 +554,11 @@ class SambaQueryUpdater(nn.Module):
 
 
 class MaskedSambaQueryUpdater(SambaQueryUpdater):
-    def __init__(self, *args, mask_pos: bool = False, update_only_pos: bool = False, **kwargs):
+    def __init__(self, *args, with_masking: bool = False, with_ref_pts_residual: bool = False, update_only_pos: bool = False, **kwargs):
         super().__init__(*args, **kwargs)
         self.update_only_pos = update_only_pos
-        self.mask_pos = mask_pos
+        self.with_masking = with_masking
+        self.with_ref_pts_residual = with_ref_pts_residual
         
     def update_tracks_embedding(self, tracks: List[TrackInstances], intervals: List[int]):
         for b in range(len(tracks)):
@@ -586,8 +587,8 @@ class MaskedSambaQueryUpdater(SambaQueryUpdater):
             output_embed = tracks[b].output_embed
 
             # Mask embeddings and positions of low-confidence boxes (likely occluded)
-            output_embed[~is_pos] = 0.0 * output_embed[~is_pos]
-            if self.mask_pos:
+            if self.with_masking:
+                output_embed[~is_pos] = 0.0 * output_embed[~is_pos]
                 output_pos[~is_pos] = 0.0 * output_pos[~is_pos]
 
             # Samba
@@ -709,8 +710,9 @@ def build(config: dict):
                 update_threshold=config["UPDATE_THRESH"],
                 long_memory_lambda=config["LONG_MEMORY_LAMBDA"],
                 visualize=config["VISUALIZE"],
-                mask_pos=config["MASK_POS"],
+                with_masking=config["MASKING"],
                 with_residual=config["RESIDUAL"],
+                with_ref_pts_residual=config["REF_PTS_RESIDUAL"],
                 update_only_pos=config["UPDATE_ONLY_POS"],
             )
     else:
