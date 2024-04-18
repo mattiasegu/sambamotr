@@ -148,18 +148,18 @@ class SambaBlock(nn.Module):
                 embed_dim=self_attn_cfg['embed_dims'],
                 num_heads=self_attn_cfg['num_heads'],
                 batch_first=True)
-        if ffn_cfg is not None:
-            ffn_cfg = ffn_cfg.copy()
-            ffn_cfg['embed_dims'] *= expansion_factor
-            ffn_cfg['feedforward_channels'] *= expansion_factor
-            self.ffn = FFN(d_model=ffn_cfg['embed_dims'],
-                           d_ffn=ffn_cfg['feedforward_channels'],
-                           dropout=ffn_cfg['ffn_drop'])
+            if ffn_cfg is not None:
+                ffn_cfg = ffn_cfg.copy()
+                ffn_cfg['embed_dims'] *= expansion_factor
+                ffn_cfg['feedforward_channels'] *= expansion_factor
+                self.ffn = FFN(d_model=ffn_cfg['embed_dims'],
+                            d_ffn=ffn_cfg['feedforward_channels'],
+                            dropout=ffn_cfg['ffn_drop'])
 
-        norms_list = [
-            nn.LayerNorm(d_model * expansion_factor) for _ in range(2)
-        ]
-        self.norms = ModuleList(norms_list)
+            norms_list = [
+                nn.LayerNorm(d_model * expansion_factor) for _ in range(2)
+            ]
+            self.norms = ModuleList(norms_list)
 
     def forward(self, inputs, hidden_states, conv_history, rate=1):
         """Mamba block forward. This looks the same as Figure 3 in Section 3.4 in the Mamba paper [1].
