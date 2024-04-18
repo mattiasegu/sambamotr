@@ -83,6 +83,7 @@ EXPAND: 2
 SAMBA_NUM_LAYERS: 2
 CONV_DIM: 4
 FPS_INVARIANT: True
+RESIDUAL: False
 
 # other possible ablations: (i) layer type (e.g. S4 or S6)
 WITH_SELF_ATTN: False

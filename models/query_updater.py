@@ -294,6 +294,7 @@ class SambaQueryUpdater(nn.Module):
                 use_dab: bool,
                 update_threshold: float,
                 long_memory_lambda: float,
+                with_residual: bool = False,
                 visualize: bool = False):
         """
         Init a query updater.
@@ -317,6 +318,7 @@ class SambaQueryUpdater(nn.Module):
         self.use_checkpoint = use_checkpoint
         self.use_dab = use_dab
         self.visualize = visualize
+        self.with_residual = with_residual
 
         self.samba = Samba(num_layers=num_layers,
                             d_model=hidden_dim,
@@ -346,6 +348,10 @@ class SambaQueryUpdater(nn.Module):
             output_dim=self.hidden_dim,
             num_layers=2
         )
+
+        if self.with_residual:
+            self.query_feat_ffn = FFN(d_model=self.hidden_dim, d_ffn=self.ffn_dim, dropout=self.dropout)
+            self.norm_emb = nn.LayerNorm(self.hidden_dim)
 
         if self.use_dab is False:   # D-DETR, use this module to update the
             self.linear_pos1 = nn.Linear(256, 256)
@@ -391,7 +397,6 @@ class SambaQueryUpdater(nn.Module):
                 tracks[b].ref_pts[is_pos] = inverse_sigmoid(tracks[b].boxes[is_pos].detach().clone())
             else:
                 tracks[b].ref_pts[is_pos] = inverse_sigmoid(tracks[b].boxes[is_pos].detach().clone())
-            # TODO: understand why the inverse_sigmoid is done here. is there a sigmoid anywhere else later?
 
             output_pos = pos_to_pos_embed(tracks[b].ref_pts.sigmoid(), num_pos_feats=self.hidden_dim//2)
             output_pos = self.query_pos_head(output_pos)
@@ -413,9 +418,24 @@ class SambaQueryUpdater(nn.Module):
             tracks[b].conv_history = conv_history.squeeze(0)
             output_embed = output_embed.squeeze(0)
             if self.use_dab:
-                tracks[b].query_embed[is_pos] = output_embed[is_pos]
+                if self.with_residual:
+                    new_query_embed = self.query_feat_ffn(output_embed)
+                    query_embed = tracks[b].query_embed
+                    query_embed = query_embed + new_query_embed
+                    query_embed = self.norm_emb(query_embed)
+                    tracks[b].query_embed[is_pos] = query_embed[is_pos]
+                else:
+                    tracks[b].query_embed[is_pos] = output_embed[is_pos]
             else:
-                tracks[b].query_embed[:, self.hidden_dim:][is_pos] = output_embed[is_pos]
+                if self.with_residual:
+                    new_query_embed = self.query_feat_ffn(output_embed)
+                    query_embed = tracks[b].query_embed[:, self.hidden_dim:]
+                    query_embed = query_embed + new_query_embed
+                    query_embed = self.norm_emb(query_embed)
+                    tracks[b].query_embed[:, self.hidden_dim:][is_pos] = query_embed[is_pos]
+                else:
+                    tracks[b].query_embed[:, self.hidden_dim:][is_pos] = output_embed[is_pos]
+
                 # Update query pos, which is not appeared in DAB-D-DETR framework:
                 new_query_pos = self.linear_pos2(self.activation(self.linear_pos1(output_embed)))
                 query_pos = tracks[b].query_embed[:, :self.hidden_dim]
@@ -589,9 +609,24 @@ class MaskedSambaQueryUpdater(SambaQueryUpdater):
             # unlike MeMOTR, we update the embed also for low-confidence boxes since Samba takes care of masked observations from context
             update = is_pos if self.update_only_pos else scores >= 0.0
             if self.use_dab:
-                tracks[b].query_embed[update] = output_embed[update]
+                if self.with_residual:
+                    new_query_embed = self.query_feat_ffn(output_embed)
+                    query_embed = tracks[b].query_embed
+                    query_embed = query_embed + new_query_embed
+                    query_embed = self.norm_emb(query_embed)
+                    tracks[b].query_embed[update] = query_embed[update]
+                else:
+                    tracks[b].query_embed[update] = output_embed[update]
             else:
-                tracks[b].query_embed[:, self.hidden_dim:][update] = output_embed[update]
+                if self.with_residual:
+                    new_query_embed = self.query_feat_ffn(output_embed)
+                    query_embed = tracks[b].query_embed[:, self.hidden_dim:]
+                    query_embed = query_embed + new_query_embed
+                    query_embed = self.norm_emb(query_embed)
+                    tracks[b].query_embed[:, self.hidden_dim:][update] = query_embed[update]
+                else:
+                    tracks[b].query_embed[:, self.hidden_dim:][update] = output_embed[update]
+
                 # Update query pos, which is not appeared in DAB-D-DETR framework:
                 new_query_pos = self.linear_pos2(self.activation(self.linear_pos1(output_embed)))
                 query_pos = tracks[b].query_embed[:, :self.hidden_dim]
@@ -652,6 +687,7 @@ def build(config: dict):
                 use_dab=config["USE_DAB"],
                 update_threshold=config["UPDATE_THRESH"],
                 long_memory_lambda=config["LONG_MEMORY_LAMBDA"],
+                with_residual=config["RESIDUAL"],
                 visualize=config["VISUALIZE"],
             )
     elif config["QUERY_UPDATER"] == "MaskedSambaQueryUpdater":
@@ -674,6 +710,7 @@ def build(config: dict):
                 long_memory_lambda=config["LONG_MEMORY_LAMBDA"],
                 visualize=config["VISUALIZE"],
                 mask_pos=config["MASK_POS"],
+                with_residual=config["RESIDUAL"],
                 update_only_pos=config["UPDATE_ONLY_POS"],
             )
     else:

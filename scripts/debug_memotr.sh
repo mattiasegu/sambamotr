@@ -2,7 +2,8 @@
 
 JOB_NAME=debug_memotr_dancetrack
 # CONFIG=./configs/sambamotr/train_dancetrack.yaml
-CONFIG=./configs/masked_mambamotr/dab_detr/train_dancetrack_update_all_mask_pos.yaml
+# CONFIG=./configs/mambamotr/def_detr/train_dancetrack.yaml
+CONFIG=configs/masked_mambamotr/def_detr/train_dancetrack_residual.yaml
 OUT_DIR=./outputs/tmp/${JOB_NAME}/
 BS=1 
 DATA_ROOT=/BS/diffusion-track/nobackup/data/mot/
@@ -20,14 +21,16 @@ fi
 #      --config-path ${CONFIG} \
 #      --outputs-dir ${OUT_DIR} \
 #      --batch-size ${BS} \
-#      --data-root ${DATA_ROOT}
+#      --data-root ${DATA_ROOT} \
+#      --pretrained-model pretrained/r50_deformable_detr_plus_iterative_bbox_refinement-checkpoint.pth
 
 python main.py \
      --config-path ${CONFIG} \
      --outputs-dir ${OUT_DIR} \
      --batch-size ${BS} \
      --data-root ${DATA_ROOT} \
-     --use-checkpoint
+     --use-checkpoint \
+     --pretrained-model pretrained/r50_deformable_detr_plus_iterative_bbox_refinement-checkpoint.pth
 
 
 # tools/main.sh \

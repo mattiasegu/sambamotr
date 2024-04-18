@@ -1,13 +1,15 @@
 #!/bin/bash
 JOB_NAME=memotr_dancetrack_def_detr
 TIME=1:00:00  # TIME=(24:00:00)
-PARTITION=gpu22  # PARTITION=(gpu16 | gpu20 | gpu22) 
-GPUS=2
-CPUS=16
-MEM_PER_CPU=22000
+PARTITION=gpu20  # PARTITION=(gpu16 | gpu20 | gpu22) 
+
+NNODES=2
+GPUS_PER_NODE=1
+CPUS_PER_TASK=2
+MEM_PER_CPU=10000
+GPUS=`echo $GPUS_PER_NODE*$NNODES | bc`
 SBATCH_ARGS=${SBATCH_ARGS:-""}
-GPUS_PER_NODE=${GPUS}
-CPUS_PER_TASK=${CPUS}
+
 
 # rescale
 BS_PER_GPU=1
@@ -32,12 +34,7 @@ OUT_DIR=./outputs/${JOB_NAME}/
 BS=1 
 DATA_ROOT=/BS/diffusion-track/nobackup/data/mot/
 
-if [ $GPUS -gt 1 ]
-then
-     CMD=tools/dist_main.sh
-else
-     CMD=tools/main.sh
-fi
+CMD=scripts/hpc/slurm/tools/dist_main.sh
 
 echo "Launching ${CMD} on ${GPUS} gpus."
 echo "Starting job ${JOB_NAME} from ${CONFIG}" 
@@ -45,18 +42,24 @@ echo "Starting job ${JOB_NAME} from ${CONFIG}"
 mkdir -p resources/errors/ 
 mkdir -p resources/outputs/ 
 
-
+# GPUS_TYPE=a40
+PORT=$(shuf -i 24000-29500 -n 1)
+     # --gres=gpu:${GPUS_TYPE}:${GPUS_PER_NODE} \
 ID=$(sbatch \
      --parsable \
      -t ${TIME} \
      --job-name=${JOB_NAME} \
      -p ${PARTITION} \
+     --ntasks=${GPUS} \
+     --ntasks-per-node=${GPUS_PER_NODE} \
      --gres=gpu:${GPUS_PER_NODE} \
+     --cpus-per-task=${CPUS_PER_TASK} \
+     --mem-per-cpu=${MEM_PER_CPU} \
      -e resources/errors/%j.log \
      -o resources/outputs/%j.log \
      ${SBATCH_ARGS} \
      ${CMD} \
-     ${GPUS} \
+     ${PORT} \
           --config-path ${CONFIG} \
           --outputs-dir ${OUT_DIR} \
           --batch-size ${BS} \
