@@ -646,10 +646,10 @@ class MaskedSambaQueryUpdater(SambaQueryUpdater):
             if self.with_ref_pts_residual:
                 tmp = self.bbox_embed(output_embed)
                 if tracks[b].ref_pts.shape[-1] == 4:
-                    tracks[b].ref_pts[is_pos] = tmp[is_pos] + tracks[b].ref_pts[is_pos]
+                    tracks[b].ref_pts[update] = tmp[update] + tracks[b].ref_pts[update]
                 else:
                     assert tracks[b].ref_pts.shape[-1] == 2
-                    tracks[b].ref_pts[is_pos] = tmp[..., :2][is_pos] + tracks[b].ref_pts[is_pos]
+                    tracks[b].ref_pts[update] = tmp[..., :2][update] + tracks[b].ref_pts[update]
 
             if self.visualize:
                 torch.save(tracks[b].ref_pts.cpu(), "./outputs/visualize_tmp/query_updater/next_ref_pts.tensor")
