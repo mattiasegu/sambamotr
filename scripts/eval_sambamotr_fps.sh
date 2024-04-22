@@ -2,8 +2,11 @@
 
 CONFIG=./configs/masked_mambamotr/def_detr/train_dancetrack_residual_masking_only_pos_fps.yaml
 OUT_DIR=./pretrained/sambamotr_residual_masking_only_pos_fps
+# CONFIG=./configs/masked_mambamotr/def_detr/train_dancetrack_residual_masking_only_pos.yaml
+# OUT_DIR=./pretrained/sambamotr_residual_masking_only_pos
 MODEL_NAME=checkpoint_12.pth
-EVAL_INTERVAL=100
+EVAL_INTERVAL=10
+# EVAL_INTERVAL=100
 EXP_NAME=interval_${EVAL_INTERVAL}
 BS=1 
 DATA_ROOT=/BS/diffusion-track/nobackup/data/mot/

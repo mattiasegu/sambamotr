@@ -17,6 +17,41 @@ from utils.box_ops import box_cxcywh_to_xyxy, box_iou_union
 from .samba import Samba
 
 
+class BatchDropout(nn.Module):
+    def __init__(self, p=0.5):
+        """
+        Initializes the BatchDropout layer.
+        
+        Args:
+        p (float): Probability of dropping a sample in the batch.
+        """
+        super(BatchDropout, self).__init__()
+        self.p = p  # Store the probability of dropping a sample
+
+    def forward(self, x):
+        """
+        The forward pass for applying dropout to entire samples in the batch.
+
+        Args:
+        x (torch.Tensor): Input tensor of shape (batch_size, features).
+
+        Returns:
+        torch.Tensor: Output tensor after applying dropout.
+        """
+        if not self.training:
+            return x  # Return the input directly if the model is in evaluation mode
+
+        # Create a dropout mask with a probability `p` for dropping
+        batch_size = x.size(0)
+        mask = torch.rand(batch_size, device=x.device) > self.p  # This creates a boolean mask
+        
+        # Convert the boolean mask to the same dtype as `x`
+        mask = mask.float()
+        mask = mask.unsqueeze(1)  # Adjust mask shape to be broadcastable to the shape of `x`
+        
+        return x * mask  # Apply mask
+
+
 class QueryUpdater(nn.Module):
     def __init__(self, hidden_dim: int, ffn_dim: int,
                  num_heads: int,
@@ -306,6 +341,7 @@ class SambaQueryUpdater(nn.Module):
         self.tp_drop_ratio = tp_drop_ratio
         self.fp_insert_ratio = fp_insert_ratio
         self.dropout = dropout
+        self.observation_dropout = BatchDropout(self.dropout)
 
         # Samba
         self.num_heads = num_heads
@@ -353,7 +389,7 @@ class SambaQueryUpdater(nn.Module):
         )
 
         if self.with_residual:
-            self.query_feat_ffn = FFN(d_model=self.hidden_dim, d_ffn=self.ffn_dim, dropout=self.dropout)
+            self.query_feat_ffn = FFN(d_model=self.hidden_dim, d_ffn=self.ffn_dim, dropout=0.0)
             self.norm_emb = nn.LayerNorm(self.hidden_dim)
 
         if self.use_dab is False:   # D-DETR, use this module to update the
@@ -596,6 +632,7 @@ class MaskedSambaQueryUpdater(SambaQueryUpdater):
 
             # Mask embeddings and positions of low-confidence boxes (likely occluded)
             if self.with_masking:
+                output_embed = self.observation_dropout(output_embed)
                 output_embed[~is_pos] = 0.0 * output_embed[~is_pos]
                 output_pos[~is_pos] = 0.0 * output_pos[~is_pos]
 
@@ -698,7 +735,7 @@ def build(config: dict):
                 with_self_attn=config["WITH_SELF_ATTN"],
                 with_self_attn_prior=config["WITH_SELF_ATTN_PRIOR"] if "WITH_SELF_ATTN_PRIOR" in config else False,
                 fps_invariant=config["FPS_INVARIANT"],
-                dropout=config["DROPOUT"],
+                dropout=config["SAMBA_DROPOUT"] if "SAMBA_DROPOUT" in config else 0.0,
                 tp_drop_ratio=config["TP_DROP_RATE"] if "TP_DROP_RATE" in config else 0.0,
                 fp_insert_ratio=config["FP_INSERT_RATE"] if "FP_INSERT_RATE" in config else 0.0,
                 use_checkpoint=config["USE_CHECKPOINT"],
@@ -720,7 +757,7 @@ def build(config: dict):
                 with_self_attn=config["WITH_SELF_ATTN"],
                 with_self_attn_prior=config["WITH_SELF_ATTN_PRIOR"] if "WITH_SELF_ATTN_PRIOR" in config else False,
                 fps_invariant=config["FPS_INVARIANT"],
-                dropout=config["DROPOUT"],
+                dropout=config["SAMBA_DROPOUT"] if "SAMBA_DROPOUT" in config else 0.0,
                 tp_drop_ratio=config["TP_DROP_RATE"] if "TP_DROP_RATE" in config else 0.0,
                 fp_insert_ratio=config["FP_INSERT_RATE"] if "FP_INSERT_RATE" in config else 0.0,
                 use_checkpoint=config["USE_CHECKPOINT"],

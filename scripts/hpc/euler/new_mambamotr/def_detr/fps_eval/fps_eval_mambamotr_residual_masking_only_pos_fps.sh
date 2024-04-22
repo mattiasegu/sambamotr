@@ -51,6 +51,7 @@ mkdir -p resources/outputs/
 for EVAL_INTERVAL in 1 2 3 4 5 6 7 8 9 10;
 do
      GPUS_TYPE=rtx_4090  # GPUS_TYPE=(rtx_3090 | rtx_4090 | titan_rtx)
+     EXP_NAME=interval_${EVAL_INTERVAL}
      ID=$(sbatch \
           --parsable \
           -t ${TIME} \
@@ -69,6 +70,7 @@ do
                --data-root ${DATA_ROOT} \
                --eval-dir ${OUT_DIR} \
                --eval-model ${MODEL_NAME} \
+               --exp-name ${EXP_NAME} \
                --eval-interval ${EVAL_INTERVAL} \
                --eval-threads ${GPUS})
 done
