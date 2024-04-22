@@ -240,7 +240,7 @@ def eval_model(config: dict, model: MeMOTR, outputs_dir: str, val_split: str, wr
         os.system(f"mv {tracker_dir} {tracker_mv_dir}")
         
         if dataset_name == "DanceTrack" or dataset_name == "SportsMOT":
-            os.system(f"python3 TrackEval/scripts/run_mot_challenge.py --SPLIT_TO_EVAL {val_split}  "
+            os.system(f"python3 SparseTrackEval/scripts/run_mot_challenge.py --SPLIT_TO_EVAL {val_split}  "
                     f"--METRICS HOTA CLEAR Identity  --GT_FOLDER {data_split_dir} "
                     f"--SEQMAP_FILE {os.path.join(data_dir, f'{val_split}_seqmap.txt')} "
                     f"--SKIP_SPLIT_FOL True --TRACKERS_TO_EVAL '' --TRACKER_SUB_FOLDER ''  --USE_PARALLEL True "
@@ -248,14 +248,14 @@ def eval_model(config: dict, model: MeMOTR, outputs_dir: str, val_split: str, wr
                     f"--TRACKERS_FOLDER {tracker_mv_dir}")
         elif "MOT17" in dataset_name:
             if "mot15" in val_split:
-                os.system(f"python3 TrackEval/scripts/run_mot_challenge.py --SPLIT_TO_EVAL {val_split}  "
+                os.system(f"python3 SparseTrackEval/scripts/run_mot_challenge.py --SPLIT_TO_EVAL {val_split}  "
                         f"--METRICS HOTA CLEAR Identity  --GT_FOLDER {data_split_dir} "
                         f"--SEQMAP_FILE {os.path.join(data_dir, f'{val_split}_seqmap.txt')} "
                         f"--SKIP_SPLIT_FOL True --TRACKERS_TO_EVAL '' --TRACKER_SUB_FOLDER ''  --USE_PARALLEL True "
                         f"--NUM_PARALLEL_CORES 8 --PLOT_CURVES False "
                         f"--TRACKERS_FOLDER {tracker_mv_dir} --BENCHMARK MOT15")
             else:
-                os.system(f"python3 TrackEval/scripts/run_mot_challenge.py --SPLIT_TO_EVAL {val_split}  "
+                os.system(f"python3 SparseTrackEval/scripts/run_mot_challenge.py --SPLIT_TO_EVAL {val_split}  "
                         f"--METRICS HOTA CLEAR Identity  --GT_FOLDER {data_split_dir} "
                         f"--SEQMAP_FILE {os.path.join(data_dir, f'{val_split}_seqmap.txt')} "
                         f"--SKIP_SPLIT_FOL True --TRACKERS_TO_EVAL '' --TRACKER_SUB_FOLDER ''  --USE_PARALLEL True "

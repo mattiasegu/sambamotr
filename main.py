@@ -39,6 +39,7 @@ def parse_option():
     parser.add_argument("--eval-port", type=int)
     parser.add_argument("--eval-data-split", type=str)
     parser.add_argument("--eval-interval", type=int)
+    parser.add_argument("--exp-name", type=str)
 
     # Pretrained Model Load:
     parser.add_argument("--pretrained-model", type=str, help="Pretrained model path.")

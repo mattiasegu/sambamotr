@@ -215,7 +215,8 @@ def submit(config: dict):
     dataset_name = train_config["DATASET"]
     config["DATASET"] = dataset_name
     dataset_split = config["SUBMIT_DATA_SPLIT"]
-    outputs_dir = path.join(config["SUBMIT_DIR"], dataset_split)
+    exp_name = config["EXP_NAME"] if "EXP_NAME" in config else ""
+    outputs_dir = path.join(config["SUBMIT_DIR"], dataset_split, exp_name)
     use_dab = train_config["USE_DAB"]
     det_score_thresh = config["DET_SCORE_THRESH"]
     track_score_thresh = config["TRACK_SCORE_THRESH"]
