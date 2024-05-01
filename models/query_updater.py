@@ -412,11 +412,11 @@ class SambaQueryUpdater(nn.Module):
                 intervals = List[int],
                 no_augment: bool = False):
         tracks = self.select_active_tracks(previous_tracks, new_tracks, unmatched_dets, no_augment=no_augment)
-        tracks = self.update_tracks_embedding(tracks=tracks, intervals=intervals)
+        tracks = self.update_tracks_embedding(tracks=tracks, intervals=intervals, no_augment=no_augment)
 
         return tracks
     
-    def update_tracks_embedding(self, tracks: List[TrackInstances], intervals: List[int]):
+    def update_tracks_embedding(self, tracks: List[TrackInstances], intervals: List[int], no_augment: bool = False):
         for b in range(len(tracks)):
             scores = torch.max(logits_to_scores(logits=tracks[b].logits), dim=1).values
             is_pos = scores > self.update_threshold
@@ -593,10 +593,11 @@ class SambaQueryUpdater(nn.Module):
 
 
 class MaskedSambaQueryUpdater(SambaQueryUpdater):
-    def __init__(self, *args, with_masking: bool = False, with_ref_pts_residual: bool = False, update_only_pos: bool = False, **kwargs):
+    def __init__(self, *args, with_masking: bool = False, with_detach: bool = False, with_ref_pts_residual: bool = False, update_only_pos: bool = False, **kwargs):
         super().__init__(*args, **kwargs)
         self.update_only_pos = update_only_pos
         self.with_masking = with_masking
+        self.with_detach = with_detach
         self.with_ref_pts_residual = with_ref_pts_residual
         
         if self.with_ref_pts_residual:
@@ -604,7 +605,7 @@ class MaskedSambaQueryUpdater(SambaQueryUpdater):
             nn.init.constant_(self.bbox_embed.layers[-1].weight.data, 0)
             nn.init.constant_(self.bbox_embed.layers[-1].bias.data, 0)
 
-    def update_tracks_embedding(self, tracks: List[TrackInstances], intervals: List[int]):
+    def update_tracks_embedding(self, tracks: List[TrackInstances], intervals: List[int], no_augment: bool = False):
         for b in range(len(tracks)):
             scores = torch.max(logits_to_scores(logits=tracks[b].logits), dim=1).values
             is_pos = scores > self.update_threshold
@@ -632,7 +633,8 @@ class MaskedSambaQueryUpdater(SambaQueryUpdater):
 
             # Mask embeddings and positions of low-confidence boxes (likely occluded)
             if self.with_masking:
-                output_embed = self.observation_dropout(output_embed)
+                if not no_augment:
+                    output_embed = self.observation_dropout(output_embed)
                 output_embed[~is_pos] = 0.0 * output_embed[~is_pos]
                 output_pos[~is_pos] = 0.0 * output_pos[~is_pos]
 
@@ -658,6 +660,8 @@ class MaskedSambaQueryUpdater(SambaQueryUpdater):
                 if self.with_residual:
                     new_query_embed = self.query_feat_ffn(output_embed)
                     query_embed = tracks[b].query_embed
+                    if self.with_detach:
+                        query_embed = query_embed.detach().clone()
                     query_embed = query_embed + new_query_embed
                     query_embed = self.norm_emb(query_embed)
                     tracks[b].query_embed[update] = query_embed[update]
@@ -667,6 +671,8 @@ class MaskedSambaQueryUpdater(SambaQueryUpdater):
                 if self.with_residual:
                     new_query_embed = self.query_feat_ffn(output_embed)
                     query_embed = tracks[b].query_embed[:, self.hidden_dim:]
+                    if self.with_detach:
+                        query_embed = query_embed.detach().clone()
                     query_embed = query_embed + new_query_embed
                     query_embed = self.norm_emb(query_embed)
                     tracks[b].query_embed[:, self.hidden_dim:][update] = query_embed[update]
@@ -676,6 +682,8 @@ class MaskedSambaQueryUpdater(SambaQueryUpdater):
                 # Update query pos, which is not appeared in DAB-D-DETR framework:
                 new_query_pos = self.linear_pos2(self.activation(self.linear_pos1(output_embed)))
                 query_pos = tracks[b].query_embed[:, :self.hidden_dim]
+                if self.with_detach:
+                    query_pos = query_pos.detach().clone()
                 query_pos = query_pos + new_query_pos
                 query_pos = self.norm_pos(query_pos)
                 tracks[b].query_embed[:, :self.hidden_dim][update] = query_pos[update]
@@ -767,6 +775,7 @@ def build(config: dict):
                 visualize=config["VISUALIZE"],
                 with_masking=config["MASKING"],
                 with_residual=config["RESIDUAL"],
+                with_detach=config["DETACH"] if "DETACH" in config else False,
                 with_ref_pts_residual=config["REF_PTS_RESIDUAL"],
                 update_only_pos=config["UPDATE_ONLY_POS"],
             )

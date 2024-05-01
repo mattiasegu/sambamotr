@@ -95,6 +95,7 @@ SAMBA_DROPOUT: 0.0
 UPDATE_ONLY_POS: False
 MASKING: True
 RESIDUAL: False
+DETACH: False
 REF_PTS_RESIDUAL: False
 
 # Sampling setting

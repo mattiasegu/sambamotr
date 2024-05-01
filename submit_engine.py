@@ -86,7 +86,7 @@ class Submitter:
                 tracks=tracks
             )  # TODO: check tracks usage
             tracks: List[TrackInstances] = get_model(self.model).postprocess_single_frame(
-                previous_tracks, new_tracks, None, intervals=[1])
+                previous_tracks, new_tracks, None, intervals=[self.interval])
 
             # We do not use this...
             # but I do not want to remove this part.
@@ -227,6 +227,16 @@ def submit(config: dict):
     motion_lambda = config["MOTION_LAMBDA"]
     miss_tolerance = config["MISS_TOLERANCE"]
     interval=config["EVAL_INTERVAL"] if "EVAL_INTERVAL" in config else 1
+    update_thresh = config["UPDATE_THRESH"]
+    train_config["UPDATE_THRESH"] = update_thresh
+    train_update_thresh = train_config["UPDATE_THRESH"]
+
+    print(f"det_score_thresh: {det_score_thresh}")
+    print(f"track_score_thresh: {track_score_thresh}")
+    print(f"result_score_thresh: {result_score_thresh}")
+    print(f"miss_tolerance: {miss_tolerance}")
+    print(f"update_thresh: {update_thresh}")
+    print(f"update_thresh: {train_update_thresh}")
 
     model = build_model(config=train_config)
     load_checkpoint(

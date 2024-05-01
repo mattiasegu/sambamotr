@@ -97,16 +97,13 @@ UPDATE_ONLY_POS: False
 MASKING: True
 RESIDUAL: True
 REF_PTS_RESIDUAL: False
+DETACH: True
 
 # Sampling setting
 SAMPLE_STEPS: []
-SAMPLE_LENGTHS: [10]
+SAMPLE_LENGTHS: [5]
 SAMPLE_MODES: [random_interval]
-SAMPLE_INTERVALS: [10]  # TODO: try with 5
-
-# Gradient setting
-NO_GRAD_STEPS: [0]
-NO_GRAD_FRAMES: [5]
+SAMPLE_INTERVALS: [10]
 
 # Training setting
 SEED: 42

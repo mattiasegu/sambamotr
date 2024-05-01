@@ -41,6 +41,13 @@ def parse_option():
     parser.add_argument("--eval-interval", type=int)
     parser.add_argument("--exp-name", type=str)
 
+    # Runtime Tracker
+    parser.add_argument("--det-score-thresh", type=float)
+    parser.add_argument("--track-score-thresh", type=float)
+    parser.add_argument("--result-score-thresh", type=float)
+    parser.add_argument("--update-thresh", type=float)
+    parser.add_argument("--miss-tolerance", type=float)
+
     # Pretrained Model Load:
     parser.add_argument("--pretrained-model", type=str, help="Pretrained model path.")
     # Resume
@@ -75,7 +82,6 @@ def parse_option():
     parser.add_argument("--lr-backbone", type=float)
 
     # Submit setting：
-    parser.add_argument("--miss-tolerance", type=float)
 
     # Model setting：
     parser.add_argument("--num-det-queries", type=int)

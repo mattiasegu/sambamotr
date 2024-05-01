@@ -97,6 +97,7 @@ UPDATE_ONLY_POS: True
 MASKING: True
 RESIDUAL: True
 REF_PTS_RESIDUAL: False
+DETACH: False
 
 # Sampling setting
 SAMPLE_STEPS: []

@@ -356,7 +356,7 @@ def train_one_epoch(model: MeMOTR, train_states: dict, max_norm: float,
                     )
                     if frame_idx < len(batch["imgs"][0]) - 1:
                         tracks = get_model(model).postprocess_single_frame(
-                            previous_tracks, new_tracks, unmatched_dets, intervals=batch["intervals"], no_augment=frame_idx < no_grad_frames-1)
+                            previous_tracks, new_tracks, unmatched_dets, intervals=batch["intervals"], no_augment=frame_idx <= no_grad_frames-1)
 
         loss_dict, log_dict = criterion.get_mean_by_n_gts()
         loss = criterion.get_sum_loss_dict(loss_dict=loss_dict)
