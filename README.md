@@ -1,33 +1,21 @@
 # SambaMOTR
 
-The official implementation of [SambaMOTR](), NeurIPS 2024.
+The official implementation of [SambaMOTR]().
 
-Authors: [Ruopeng Gao](https://ruopenggao.com), [Limin Wang](https://wanglimin.github.io/).
+Authors: [Mattia Segu](https://mattiasegu.github.io).
 
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/memotr-long-term-memory-augmented-transformer/multi-object-tracking-on-dancetrack)](https://paperswithcode.com/sota/multi-object-tracking-on-dancetrack?p=memotr-long-term-memory-augmented-transformer)
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/memotr-long-term-memory-augmented-transformer/multiple-object-tracking-on-sportsmot)](https://paperswithcode.com/sota/multiple-object-tracking-on-sportsmot?p=memotr-long-term-memory-augmented-transformer)
 
 ![MeMOTR](./assets/overview.png)
 
-**MeMOTR** is a fully-end-to-end memory-augmented multi-object tracker based on Transformer. We leverage long-term memory injection with a customized memory-attention layer, thus significantly improving the association performance.
+**SambaMOTR** is a fully-end-to-end long-term multi-object tracker based on synchronized state space models. Without bells and whistles, we combine the MOTR framework with a Samba (Synchronized Mamba) module to model long-term relationships within and across tracklets, thus significantly improving the association performance.
 
 ![Dance Demo](assets/dancetrack_demo.gif)
 
 ## News :fire:
 
-- 2024.02.21: We add the results on SportsMOT in our [arxiv](https://arxiv.org/abs/2307.15700) version (supp part). We would appreciate it if you could CITE our trackers in the SportsMOT comparison :chart_with_upwards_trend:.
-
-- 2023.12.24: We release the code, scripts and checkpoints on BDD100K :car:.
-
-- 2023.12.13: We implement a [jupyter notebook](./tools/demo.ipynb) to run our model on your own video :movie_camera:.
-
-- 2023.11.07: We release the scripts and checkpoints on SportsMOT :basketball:.
-
-- 2023.08.24: We release the scripts and checkpoints on DanceTrack :dancer:.
-
-- 2023.08.09: We release the main code. More configurations, scripts and checkpoints will be released soon :soon:.
-
-
+- 2024.05.30: We release the main code. More configurations, scripts and checkpoints will be released soon :soon:.
 
 ## Installation
 
@@ -104,53 +92,34 @@ DATADIR/
 
 ## Pretrain (Deformable DETR)
 
-
-
 We initialize our model with the official Deformable-DETR (with R50 backbone) weights pretrained on the COCO dataset, you can also download the checkpoint we used [here](https://drive.google.com/file/d/1JYKyRYzUH7uo9eVfDaVCiaIGZb5YTCuI/view?usp=sharing). And then put the checkpoint at `pretrained/deformable_detr.pth`.
 
 ## Pretrain (DAB-DETR)
 
 We initialize our model with the official DAB-Deformable-DETR (with R50 backbone) weights pretrained on the COCO dataset, you can also download the checkpoint we used [here](https://drive.google.com/file/d/17FxIGgIZJih8LWkGdlIOe9ZpVZ9IRxSj/view?usp=sharing). And then put the checkpoint at `pretrained/dab_deformable_detr.pth`.
 
-## Scripts on DanceTrack
+## Scripts
 
 ### Training
-Train MeMOTR with 8 GPUs on DanceTrack (recommended to use GPUs with >= 32 GB Memory, like V100-32GB or some else):
+Train SambaMOTR with 8 GPUs on `${DATASET}` (one of `[DanceTrack, SportsMOT, MOT17]`) (recommended to use GPUs with >= 32 GB Memory, like V100-32GB or some else):
 ```shell
-python -m torch.distributed.run --nproc_per_node=8 main.py --use-distributed --config-path ./configs/train_dancetrack.yaml --outputs-dir ./outputs/memotr_dancetrack/ --batch-size 1 --data-root <your data dir path>
+python -m torch.distributed.run --nproc_per_node=8 main.py --use-distributed --config-path ./configs/sambamotr/${DATASET}/def_detr/train_masking_sync.yaml --outputs-dir ./outputs/sambamotr/${DATASET}/ --batch-size 1 --data-root <your data dir path>
 ```
-if your GPU's memory is below than 32 GB, we also implement a memory-optimized version (by running option `--use-checkpoint`) as discussed in the paper, we use [gradient checkpoint](https://pytorch.org/docs/1.13/checkpoint.html?highlight=checkpoint#torch.utils.checkpoint.checkpoint) to reduce the allocated GPU memory. This following training script will only take about 10 GB GPU memory:
+if your GPU's memory is less than 32 GB, use the flag `--use-checkpoint` to activate [gradient checkpointing](https://pytorch.org/docs/1.13/checkpoint.html?highlight=checkpoint#torch.utils.checkpoint.checkpoint) and reduce the allocated GPU memory. 
 ```shell
-python -m torch.distributed.run --nproc_per_node=8 main.py --use-distributed --config-path ./configs/train_dancetrack.yaml --outputs-dir ./outputs/memotr_dancetrack/ --batch-size 1 --data-root <your data dir path> --use-checkpoint
+python -m torch.distributed.run --nproc_per_node=8 main.py --use-distributed --config-path ./configs/sambamotr/${DATASET}/def_detr/train_masking_sync.yaml --outputs-dir ./outputs/sambamotr/${DATASET}/ --batch-size 1 --data-root <your data dir path> --use-checkpoint
 ```
 
 ### Submit and Evaluation
 You can use this script to evaluate the trained model on the DanceTrack val set:
 ```shell
-python main.py --mode eval --data-root <your data dir path> --eval-mode specific --eval-model <filename of the checkpoint> --eval-dir ./outputs/memotr_dancetrack/ --eval-threads <your gpus num>
+python main.py --mode eval --data-root <your data dir path> --eval-mode specific --eval-model <filename of the checkpoint> --eval-dir ./outputs/sambamotr/${DATASET}/ --eval-threads <your gpus num>
 ```
 for submitting, you can use the following scripts:
 ```shell
-python -m torch.distributed.run --nproc_per_node=8 main.py --mode submit --submit-dir ./outputs/memotr_dancetrack/ --submit-model <filename of the checkpoint> --use-distributed --data-root <your data dir path>
+python -m torch.distributed.run --nproc_per_node=8 main.py --mode submit --submit-dir ./outputs/sambamotr/${DATASET}/ --submit-model <filename of the checkpoint> --use-distributed --data-root <your data dir path>
 ```
-Besides, if you just want to directly eval or submit through our trained checkpoint, you can get the checkpoint we used in the paper [here](https://drive.google.com/file/d/1_Xh-TDwwDIeacVEywwlYNvyRmhTKB5K2/view?usp=sharing). Then put this checkpoint into [./outputs/memotr_dancetrack/](./outputs/memotr_dancetrack/) and run the above scripts.
-
-## Scripts on MOT17
-
-### Submit
-
-For submitting, you can use the following scripts:
-
-```shell
-python -m torch.distributed.run --nproc_per_node=8 main.py --mode submit --config-path ./outputs/memotr_mot17/train/config.yaml --submit-dir ./outputs/memotr_mot17/ --submit-model <filename of the checkpoint> --use-distributed --data-root <your data dir path>
-```
-
-Also, you can directly download our trained checkpoint [here](https://drive.google.com/file/d/1MPZJfP91Pb1ThnX5dvxZ7tcjDH8t9hew/view?usp=drive_link). Then put it into [./outputs/memotr_mot17/](./outputs/memotr_mot17) and run the above script for submitting to get submit files of MOT17 test set.
-
-
-## Scripts on SportsMOT and other datasets
-
-You can replace the `--config-path` in [DanceTrack Scripts](#scripts-on-dancetrack). E.g., from `./configs/train_dancetrack.yaml` to `./configs/train_sportsmot.yaml` for training on SportsMOT.
+To reproduce our results, you can download our pre-trained checkpoints from [here](https://drive.google.com/file/...) and mode the corresponding one to `./outputs/sambamotr/${DATASET}/` before running the above scripts.
 
 
 ## Results
@@ -194,19 +163,10 @@ You can replace the `--config-path` in [DanceTrack Scripts](#scripts-on-dancetra
 
 ## Citation
 ```bibtex
-@InProceedings{MeMOTR,
-    author    = {Gao, Ruopeng and Wang, Limin},
-    title     = {{MeMOTR}: Long-Term Memory-Augmented Transformer for Multi-Object Tracking},
-    booktitle = {Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)},
-    month     = {October},
-    year      = {2023},
-    pages     = {9901-9910}
-}
+
+
+
 ```
-
-## Stars
-
-[![Star History Chart](https://api.star-history.com/svg?repos=MCG-NJU/MeMOTR&type=Date)](https://star-history.com/#MCG-NJU/MeMOTR&Date)
 
 ## Acknowledgement
 
