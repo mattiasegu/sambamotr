@@ -1,5 +1,5 @@
 #!/bin/bash
-JOB_NAME=sambamotr_dancetrack
+JOB_NAME=mambamotr_dancetrack
 TIME=1:00:00  # TIME=(24:00:00)
 GPUS=2
 CPUS=16
@@ -26,14 +26,14 @@ LR_BACKBONE=0.00002
 LR_POINTS=0.00001
 JOB_NAME=${JOB_NAME}_lr_${LR}
 
-CONFIG=./configs/sambamotr/train_dancetrack.yaml
-OUT_DIR=/cluster/work/cvl/segum/workspaces/sambamotr/outputs/${JOB_NAME}/
+CONFIG=./configs/masked_mambamotr/def_detr/train_dancetrack_residual_masking.yaml
+OUT_DIR=/cluster/home/segum/Projects/SambaMOTR/outputs/new_mambamotr_dancetrack_residual_masking_lr_0.0002
 BS=1 
 DATA_ROOT=/cluster/work/cvl/segum/datasets/mot/data/
-MODEL_NAME=checkpoint_19.pth
+MODEL_NAME=checkpoint_15.pth
 
-CMD=scripts/hpc/euler/tools/main.sh
-# CMD=scripts/hpc/euler/tools/main_no_copy.sh
+# CMD=scripts/hpc/euler/tools/main.sh
+CMD=scripts/hpc/euler/tools/main_no_copy.sh
 
 echo "Launching ${CMD} on ${GPUS} gpus."
 echo "Starting job ${JOB_NAME} from ${CONFIG}" 
@@ -55,8 +55,10 @@ mkdir -p resources/outputs/
 ${CMD} \
      ${GPUS} \
      --mode eval \
-     --eval-mode continue \
+     --eval-mode specific \
      --config-path ${CONFIG} \
      --data-root ${DATA_ROOT} \
      --eval-dir ${OUT_DIR} \
-     --eval-threads ${GPUS}
+     --eval-model ${MODEL_NAME} \
+     --eval-threads ${GPUS} \
+     --exp-name check_eval
