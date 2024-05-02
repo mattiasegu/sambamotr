@@ -3,7 +3,7 @@ JOB_NAME=multinode_sambamotr_dancetrack_def_detr
 TIME=1:00:00  # TIME=(24:00:00)
 PARTITION=gpu22  # PARTITION=(gpu16 | gpu20 | gpu22) 
 
-NNODES=2
+NNODES=4
 GPUS_PER_NODE=1
 CPUS_PER_TASK=2
 MEM_PER_CPU=10000
