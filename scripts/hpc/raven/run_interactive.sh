@@ -1,0 +1,1 @@
+srun -t 360 --gres gpu:2 --pty bash
