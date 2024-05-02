@@ -7,7 +7,7 @@ import torch.distributed
 import torch.backends.cuda
 import torch.backends.cudnn
 
-from utils.utils import distributed_rank
+from utils.utils import distributed_rank, is_distributed, init_dist, set_multi_processing
 from utils.utils import yaml_to_dict
 from configs.utils import update_config
 
@@ -22,7 +22,8 @@ def parse_option():
     parser.add_argument("--use-distributed", action="store_true", help="Use distributed training.")
     parser.add_argument("--use-checkpoint", action="store_true", help="Use gradient checkpoint to save GPU memory.")
     parser.add_argument("--checkpoint-level", type=int)
-
+    parser.add_argument("--launcher", type=str, choices=['none', 'pytorch', 'slurm', 'mpi'], default="pytorch", help="job launcher")
+    
     # Running mode, Training? Evaluation? or ?
     parser.add_argument("--mode", type=str, help="Running mode.")
 
@@ -95,15 +96,7 @@ def parse_option():
 
 
 def main(config: dict):
-    os.environ["CUDA_VISIBLE_DEVICES"] = config["AVAILABLE_GPUS"]
-
-    torch.backends.cuda.matmul.allow_tf32 = False
-    torch.backends.cudnn.allow_tf32 = False
-
-    if config["USE_DISTRIBUTED"]:
-        torch.distributed.init_process_group("nccl")
-        torch.cuda.set_device(distributed_rank())
-
+        
     from train_engine import train
     from submit_engine import submit
     from eval_engine import evaluate
@@ -117,6 +110,24 @@ def main(config: dict):
         raise ValueError(f"Unsupported mode '{config['MODE']}'")
     return
 
+def setup_env(config):
+    os.environ["CUDA_VISIBLE_DEVICES"] = config["AVAILABLE_GPUS"]
+
+    torch.backends.cuda.matmul.allow_tf32 = False
+    torch.backends.cudnn.allow_tf32 = False
+
+    # if config["USE_DISTRIBUTED"]:
+    #     torch.distributed.init_process_group("nccl")
+    #     torch.cuda.set_device(distributed_rank())
+
+    mp_cfg=dict(mp_start_method='fork', opencv_num_threads=0)
+    set_multi_processing(**mp_cfg, distributed=config["USE_DISTRIBUTED"])
+
+    # init distributed env first, since logger depends on the dist info.
+    if config["USE_DISTRIBUTED"] and not is_distributed():
+        dist_cfg = dict(backend='nccl')
+        init_dist(config["LAUNCHER"], **dist_cfg)
+
 
 if __name__ == '__main__':
     opt = parse_option()                  # runtime options
@@ -125,4 +136,6 @@ if __name__ == '__main__':
     # Merge parser option and .yaml config, then run main function.
     merged_config = update_config(config=cfg, option=opt)
     merged_config["CONFIG_PATH"] = opt.config_path
+
+    setup_env(cfg)
     main(config=merged_config)

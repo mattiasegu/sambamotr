@@ -4,7 +4,7 @@ import os
 import time
 import torch
 import torch.nn as nn
-import torch.distributed
+import torch.distributed as dist
 
 from typing import List, Tuple, Dict
 from torch.utils.data import DataLoader
@@ -50,7 +50,9 @@ def train(config: dict):
 
     # Criterion
     criterion = build_criterion(config=config)
-    criterion.set_device(torch.device("cuda", distributed_rank()))
+    # criterion.set_device(torch.device("cuda", distributed_rank()))
+    # criterion.set_device(torch.device("cuda", os.environ['LOCAL_RANK']))
+    criterion.set_device(torch.cuda.current_device())
 
     # Optimizer
     param_groups, lr_names = get_param_groups(config=config, model=model)
@@ -98,7 +100,8 @@ def train(config: dict):
     start_epoch = train_states["start_epoch"]
 
     if is_distributed():
-        model = DDP(module=model, device_ids=[distributed_rank()], find_unused_parameters=False)
+        # model = DDP(module=model, device_ids=[distributed_rank()], find_unused_parameters=False)
+        model = DDP(module=model, device_ids=[int(os.environ['LOCAL_RANK'])], find_unused_parameters=False)
 
     multi_checkpoint = "MULTI_CHECKPOINT" in config and config["MULTI_CHECKPOINT"]
     
@@ -231,7 +234,7 @@ def eval_model(config: dict, model: MeMOTR, outputs_dir: str, val_split: str, wr
         submitter.run()
 
     if is_distributed():
-        torch.distributed.barrier()
+        dist.barrier()
 
     # Eval
     if is_main_process():
@@ -382,14 +385,26 @@ def train_one_epoch(model: MeMOTR, train_states: dict, max_norm: float,
         # Outputs logs
         if i % 100 == 0:
             metric_log.sync()
-            max_memory = max([torch.cuda.max_memory_allocated(torch.device('cuda', i))
-                              for i in range(distributed_world_size())]) // (1024**2)
+            # max_memory = max([torch.cuda.max_memory_allocated(torch.device('cuda', i))
+            #                   for i in range(distributed_world_size())]) // (1024**2)
+            
+            # Calculate max memory per GPU in local node
+            max_memory_local = max([
+                torch.cuda.max_memory_allocated(torch.device('cuda', i))
+                for i in range(torch.cuda.device_count())
+            ]) // (1024**2)
+
+            # Reduce the maximum across all nodes
+            max_memory_global = torch.tensor(max_memory_local).to(torch.device('cuda'))
+            if is_distributed():
+                dist.reduce(max_memory_global, dst=0, op=dist.ReduceOp.MAX)
+
             second_per_iter = metric_log.metrics["time per iter"].avg
             logger.show(head=f"[Epoch={epoch}, Iter={i}, "
                              f"{second_per_iter:.2f}s/iter, "
                              f"{i}/{dataloader_len} iters, "
                              f"rest time: {int(second_per_iter * (dataloader_len - i) // 60)} min, "
-                             f"Max Memory={max_memory}MB]",
+                             f"Max Memory={max_memory_global}MB]",
                         log=metric_log)
             logger.write(head=f"[Epoch={epoch}, Iter={i}/{dataloader_len}]",
                          log=metric_log, filename="log.txt", mode="a")

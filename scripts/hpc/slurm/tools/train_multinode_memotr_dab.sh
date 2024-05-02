@@ -1,7 +1,7 @@
 #!/bin/bash
-JOB_NAME=memotr_dancetrack_def_detr
+JOB_NAME=multinode_sambamotr_dancetrack_def_detr
 TIME=1:00:00  # TIME=(24:00:00)
-PARTITION=gpu20  # PARTITION=(gpu16 | gpu20 | gpu22) 
+PARTITION=gpu22  # PARTITION=(gpu16 | gpu20 | gpu22) 
 
 NNODES=2
 GPUS_PER_NODE=1
@@ -29,12 +29,12 @@ LR_BACKBONE=0.00001
 LR_POINTS=0.000005
 JOB_NAME=${JOB_NAME}_lr_${LR}
 
-CONFIG=./configs/memotr/train_dancetrack_deformable_detr.yaml
+CONFIG=configs/sambamotr/dancetrack/def_detr/train_masking_sync.yaml
 OUT_DIR=./outputs/${JOB_NAME}/
 BS=1 
 DATA_ROOT=/BS/diffusion-track/nobackup/data/mot/
 
-CMD=scripts/hpc/slurm/tools/dist_main.sh
+CMD=scripts/hpc/slurm/tools/slurm_train.sh
 
 echo "Launching ${CMD} on ${GPUS} gpus."
 echo "Starting job ${JOB_NAME} from ${CONFIG}" 
@@ -67,4 +67,6 @@ ID=$(sbatch \
           --lr-backbone ${LR_BACKBONE} \
           --lr-points ${LR_POINTS} \
           --data-root ${DATA_ROOT} \
-          --use-checkpoint)
+          --use-checkpoint \
+          --pretrained-model pretrained/r50_deformable_detr_plus_iterative_bbox_refinement-checkpoint.pth \
+          --launcher slurm)

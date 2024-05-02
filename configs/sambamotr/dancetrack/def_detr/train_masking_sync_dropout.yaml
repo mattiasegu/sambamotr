@@ -4,6 +4,7 @@
 
 GIT_VERSION:
 
+LAUNCHER: none
 MODE: train
 CONFIG_PATH:
 EXP_NAME:
