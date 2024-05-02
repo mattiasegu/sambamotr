@@ -23,6 +23,5 @@ conda activate sambamotr
 export MPLBACKEND=Agg
 
 srun python -u main.py \
-    --use-distributed \
     ${PY_ARGS}
     
