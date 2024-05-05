@@ -57,8 +57,7 @@ def parse_option():
 
     # About Paths:
     # Config file:
-    parser.add_argument("--config-path", type=str, help="Config file path.",
-                        default="./configs/train_dancetrack.yaml")
+    parser.add_argument("--config-path", type=str, help="Config file path.", default="./configs/train_dancetrack.yaml")
     # Data Path:
     parser.add_argument("--data-root", type=str, help="Dataset root dir.")
     parser.add_argument("--dataset", type=str)

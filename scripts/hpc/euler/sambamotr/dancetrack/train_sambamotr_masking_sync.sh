@@ -2,14 +2,14 @@
 DATASET=dancetrack
 JOB_NAME=sambamotr_masking_sync
 CONFIG=./configs/sambamotr/${DATASET}/def_detr/train_masking_sync.yaml
+WORKSPACE=/cluster/work/cvl/lpiccinelli/sambamotr/
 
-TIME=90:00:00  # TIME=(24:00:00)
-GPUS=8
-CPUS=16
-MEM_PER_CPU=10000
+TIME=24:00:00  # TIME=(24:00:00)
+MEM_PER_CPU=4000
 SBATCH_ARGS=${SBATCH_ARGS:-""}
-GPUS_PER_NODE=${GPUS}
-CPUS_PER_TASK=${CPUS}
+GPUS=8
+GPUS_PER_NODE=4
+CPUS_PER_TASK=4
 
 # rescale
 BS_PER_GPU=1
@@ -29,9 +29,10 @@ LR_BACKBONE=0.00002
 LR_POINTS=0.00001
 JOB_NAME=${JOB_NAME}_lr_${LR}
 
-OUT_DIR=/cluster/work/cvl/segum/workspaces/sambamotr/outputs/${DATASET}/${JOB_NAME}/
+# CHANGE WORKSPACE!
+OUT_DIR=${WORKSPACE}/outputs/${DATASET}/${JOB_NAME}/
+DATA_ROOT=/cluster/project/cvl/lpiccinelli/sambamotr/data
 BS=1 
-DATA_ROOT=/cluster/work/cvl/segum/datasets/mot/data/
 
 if [ $GPUS -gt 1 ]
 then
@@ -47,24 +48,25 @@ mkdir -p resources/errors/
 mkdir -p resources/outputs/
 
 
-GPUS_TYPE=rtx_4090  # GPUS_TYPE=(rtx_3090 | rtx_4090 | titan_rtx)
+GPUS_TYPE=rtx_3090  # GPUS_TYPE=(rtx_3090 | rtx_4090 | titan_rtx | quadro_rtx_6000)
 ID=$(sbatch \
      --parsable \
      -t ${TIME} \
      --job-name=${JOB_NAME} \
-     --gpus=${GPUS_TYPE}:${GPUS_PER_NODE} \
-     --ntasks=${CPUS_PER_TASK} \
-     --mem-per-cpu ${MEM_PER_CPU} \
+     --gpus-per-node=${GPUS_TYPE}:${GPUS_PER_NODE} \
+     --ntasks=${GPUS} \
+     --ntasks-per-node=${GPUS_PER_NODE} \
+     --cpus-per-task=${CPUS_PER_TASK} \
+     --mem-per-cpu=${MEM_PER_CPU} \
      -e resources/errors/%j.log \
      -o resources/outputs/%j.log \
      ${SBATCH_ARGS} \
      ${CMD} \
-     ${GPUS} \
-          --config-path ${CONFIG} \
-          --outputs-dir ${OUT_DIR} \
-          --batch-size ${BS} \
-          --lr ${LR} \
-          --lr-backbone ${LR_BACKBONE} \
-          --lr-points ${LR_POINTS} \
-          --data-root ${DATA_ROOT} \
-          --use-checkpoint)
+     --config-path ${CONFIG} \
+     --outputs-dir ${OUT_DIR} \
+     --batch-size ${BS} \
+     --lr ${LR} \
+     --lr-backbone ${LR_BACKBONE} \
+     --lr-points ${LR_POINTS} \
+     --data-root ${DATA_ROOT} \
+     --pretrained-model /cluster/project/cvl/lpiccinelli/sambamotr/r50_deformable_detr_plus_iterative_bbox_refinement-checkpoint.pth)
