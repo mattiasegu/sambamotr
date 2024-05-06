@@ -102,9 +102,13 @@ DETACH: False
 
 # Sampling setting
 SAMPLE_STEPS: []
-SAMPLE_LENGTHS: [5]
+SAMPLE_LENGTHS: [10]
 SAMPLE_MODES: [random_interval]
-SAMPLE_INTERVALS: [10]
+SAMPLE_INTERVALS: [10]  # TODO: try with 5
+
+# Gradient setting
+NO_GRAD_STEPS: [0]
+NO_GRAD_FRAMES: [5]
 
 # Training setting
 SEED: 42

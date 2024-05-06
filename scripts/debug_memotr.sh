@@ -9,7 +9,8 @@ JOB_NAME=debug_memotr_dancetrack
 # CONFIG=configs/masked_mambamotr/def_detr/train_dancetrack_residual_masking_sync.yaml
 # CONFIG=configs/masked_mambamotr/def_detr/train_dancetrack_residual_masking_sync_longer.yaml
 # CONFIG=configs/sambamotr/sportsmot/def_detr/train_masking_sync.yaml
-CONFIG=configs/sambamotr/dancetrack/def_detr/train_masking_sync.yaml
+# CONFIG=configs/sambamotr/dancetrack/def_detr/train_masking_sync.yaml
+CONFIG=configs/masked_mambamotr/def_detr/train_dancetrack_residual_masking_sync.yaml
 OUT_DIR=./outputs/tmp/${JOB_NAME}/
 BS=1 
 DATA_ROOT=/BS/diffusion-track/nobackup/data/mot/
@@ -46,8 +47,8 @@ $CMD \
      --outputs-dir ${OUT_DIR} \
      --batch-size ${BS} \
      --data-root ${DATA_ROOT} \
-     --use-checkpoint \
      --pretrained-model pretrained/r50_deformable_detr_plus_iterative_bbox_refinement-checkpoint.pth \
+     --use-checkpoint \
      --launcher pytorch
 
 

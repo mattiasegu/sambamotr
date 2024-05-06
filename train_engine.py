@@ -88,13 +88,18 @@ def train(config: dict):
 
     # Resume
     if config["RESUME"] is not None:
-        if config["RESUME_SCHEDULER"]:
-            load_checkpoint(model=model, path=config["RESUME"], states=train_states,
-                            optimizer=optimizer, scheduler=scheduler)
+        load_path = config["RESUME"]
+        if os.path.exists(load_path):
+            if config["RESUME_SCHEDULER"]:
+                load_checkpoint(model=model, path=load_path, states=train_states,
+                                optimizer=optimizer, scheduler=scheduler)
+            else:
+                load_checkpoint(model=model, path=load_path, states=train_states)
+                for _ in range(train_states["start_epoch"]):
+                    scheduler.step()
         else:
-            load_checkpoint(model=model, path=config["RESUME"], states=train_states)
-            for _ in range(train_states["start_epoch"]):
-                scheduler.step()
+            train_logger.show(head=f"{load_path} does not exist. Initializing model from scratch.")
+            train_logger.write(head=f"{load_path} does not exist. Initializing model from scratch.")
 
     # Set start epoch
     start_epoch = train_states["start_epoch"]
