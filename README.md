@@ -94,6 +94,13 @@ DATADIR/
 
 We initialize our model with the official Deformable-DETR (with R50 backbone) weights pretrained on the COCO dataset, you can also download the checkpoint we used [here](https://drive.google.com/file/d/1JYKyRYzUH7uo9eVfDaVCiaIGZb5YTCuI/view?usp=sharing). And then put the checkpoint at `pretrained/deformable_detr.pth`.
 
+### In-domain Pre-training (Optional)
+Optionally, you can load our in-domain pre-trained detection model.
+
+```shell
+cd pretrained
+gdown 1zxkzHXuczrVr_rAAAZExVhIgQyi8QeAW  # DanceTrack
+```
 ## Pretrain (DAB-DETR)
 
 We initialize our model with the official DAB-Deformable-DETR (with R50 backbone) weights pretrained on the COCO dataset, you can also download the checkpoint we used [here](https://drive.google.com/file/d/17FxIGgIZJih8LWkGdlIOe9ZpVZ9IRxSj/view?usp=sharing). And then put the checkpoint at `pretrained/dab_deformable_detr.pth`.

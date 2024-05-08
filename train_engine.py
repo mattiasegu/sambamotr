@@ -110,6 +110,7 @@ def train(config: dict):
 
     multi_checkpoint = "MULTI_CHECKPOINT" in config and config["MULTI_CHECKPOINT"]
     
+    # config["EVAL_INTERVAL"] = 100
     # eval_model(config, model, outputs_dir, val_split, writer=tb_writer, epoch=0)
     
     # Training:
@@ -245,6 +246,10 @@ def eval_model(config: dict, model: MeMOTR, outputs_dir: str, val_split: str, wr
     if is_main_process():
         tracker_dir = os.path.join(outputs_dir, "tracker")
         tracker_mv_dir = os.path.join(outputs_dir, f"checkpoint_{epoch}" + "_tracker")
+
+        if os.path.exists(tracker_mv_dir):
+            import shutil
+            shutil.rmtree(tracker_mv_dir)
         os.system(f"mv {tracker_dir} {tracker_mv_dir}")
         
         if dataset_name == "DanceTrack" or dataset_name == "SportsMOT":
@@ -253,7 +258,7 @@ def eval_model(config: dict, model: MeMOTR, outputs_dir: str, val_split: str, wr
                     f"--SEQMAP_FILE {os.path.join(data_dir, f'{val_split}_seqmap.txt')} "
                     f"--SKIP_SPLIT_FOL True --TRACKERS_TO_EVAL '' --TRACKER_SUB_FOLDER ''  --USE_PARALLEL True "
                     f"--NUM_PARALLEL_CORES 8 --PLOT_CURVES False "
-                    f"--TRACKERS_FOLDER {tracker_mv_dir}")
+                    f"--TRACKERS_FOLDER {tracker_mv_dir} --EVAL_INTERVAL {interval}")
         elif "MOT17" in dataset_name:
             if "mot15" in val_split:
                 os.system(f"python3 SparseTrackEval/scripts/run_mot_challenge.py --SPLIT_TO_EVAL {val_split}  "
@@ -261,14 +266,14 @@ def eval_model(config: dict, model: MeMOTR, outputs_dir: str, val_split: str, wr
                         f"--SEQMAP_FILE {os.path.join(data_dir, f'{val_split}_seqmap.txt')} "
                         f"--SKIP_SPLIT_FOL True --TRACKERS_TO_EVAL '' --TRACKER_SUB_FOLDER ''  --USE_PARALLEL True "
                         f"--NUM_PARALLEL_CORES 8 --PLOT_CURVES False "
-                        f"--TRACKERS_FOLDER {tracker_mv_dir} --BENCHMARK MOT15")
+                        f"--TRACKERS_FOLDER {tracker_mv_dir} --BENCHMARK MOT15 --EVAL_INTERVAL {interval}")
             else:
                 os.system(f"python3 SparseTrackEval/scripts/run_mot_challenge.py --SPLIT_TO_EVAL {val_split}  "
                         f"--METRICS HOTA CLEAR Identity  --GT_FOLDER {data_split_dir} "
                         f"--SEQMAP_FILE {os.path.join(data_dir, f'{val_split}_seqmap.txt')} "
                         f"--SKIP_SPLIT_FOL True --TRACKERS_TO_EVAL '' --TRACKER_SUB_FOLDER ''  --USE_PARALLEL True "
                         f"--NUM_PARALLEL_CORES 8 --PLOT_CURVES False "
-                        f"--TRACKERS_FOLDER {tracker_mv_dir} --BENCHMARK MOT17")
+                        f"--TRACKERS_FOLDER {tracker_mv_dir} --BENCHMARK MOT17 --EVAL_INTERVAL {interval}")
         else:
             raise NotImplementedError(f"Do not support this Dataset name: {dataset_name}")
 

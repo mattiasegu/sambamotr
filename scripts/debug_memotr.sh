@@ -10,7 +10,8 @@ JOB_NAME=debug_memotr_dancetrack
 # CONFIG=configs/masked_mambamotr/def_detr/train_dancetrack_residual_masking_sync_longer.yaml
 # CONFIG=configs/sambamotr/sportsmot/def_detr/train_masking_sync.yaml
 # CONFIG=configs/sambamotr/dancetrack/def_detr/train_masking_sync.yaml
-CONFIG=configs/masked_mambamotr/def_detr/train_dancetrack_residual_masking_sync.yaml
+# CONFIG=configs/masked_mambamotr/def_detr/train_dancetrack_residual_masking_sync.yaml
+CONFIG=configs/sambamotr/dancetrack/def_detr/train_residual_masking_sync.yaml
 OUT_DIR=./outputs/tmp/${JOB_NAME}/
 BS=1 
 DATA_ROOT=/BS/diffusion-track/nobackup/data/mot/
@@ -41,15 +42,46 @@ fi
 #      --pretrained-model pretrained/r50_deformable_detr_plus_iterative_bbox_refinement-checkpoint.pth
 
 
-$CMD \
-     ${GPUS} \
-     --config-path ${CONFIG} \
-     --outputs-dir ${OUT_DIR} \
-     --batch-size ${BS} \
-     --data-root ${DATA_ROOT} \
-     --pretrained-model pretrained/r50_deformable_detr_plus_iterative_bbox_refinement-checkpoint.pth \
-     --use-checkpoint \
-     --launcher pytorch
+# $CMD \
+#      ${GPUS} \
+#      --config-path ${CONFIG} \
+#      --outputs-dir ${OUT_DIR} \
+#      --batch-size ${BS} \
+#      --data-root ${DATA_ROOT} \
+#      --pretrained-model pretrained/r50_deformable_detr_plus_iterative_bbox_refinement-checkpoint.pth \
+#      --use-checkpoint \
+#      --launcher pytorch
+     
+
+# $CMD \
+#      ${GPUS} \
+#      --config-path ${CONFIG} \
+#      --outputs-dir ${OUT_DIR} \
+#      --batch-size ${BS} \
+#      --data-root ${DATA_ROOT} \
+#      --pretrained-model pretrained/samba/checkpoint_13.pth \
+#      --use-checkpoint \
+#      --launcher pytorch
+     
+
+# from dancetrack coco pretrained
+# python -m debugpy --listen $HOSTNAME:5678 --wait-for-client main.py \
+#      --config-path ${CONFIG} \
+#      --outputs-dir ${OUT_DIR} \
+#      --batch-size ${BS} \
+     # --pretrained-model pretrained/r50_deformable_detr_coco_dancetrack.pth \
+#      --data-root ${DATA_ROOT} \
+#      --launcher pytorch
+
+# $CMD \
+#      ${GPUS} \
+#      --config-path ${CONFIG} \
+#      --outputs-dir ${OUT_DIR} \
+#      --batch-size ${BS} \
+#      --data-root ${DATA_ROOT} \
+#      --use-checkpoint \
+#      --pretrained-model pretrained/r50_deformable_detr_coco_dancetrack.pth \
+#      --launcher pytorch
 
 
 # tools/main.sh \
