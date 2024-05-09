@@ -1,11 +1,13 @@
 #!/bin/bash
 DATASET=dancetrack
-JOB_NAME=sambamotr_masking_sync_dropout
-CONFIG=./configs/sambamotr/${DATASET}/def_detr/train_masking_sync_dropout.yaml
+JOB_NAME=sambamotr_residual_masking
+CONFIG=./configs/sambamotr/${DATASET}/def_detr/train_masking.yaml
 
 # rescale
 BS_PER_GPU=1
 BS=`echo $GPUS*$BS_PER_GPU | bc`
+GPUS=8
+
 #########################
 # BASE LR PARAMETERS
 # LR=0.0002
@@ -24,14 +26,14 @@ JOB_NAME=${JOB_NAME}_lr_${LR}
 OUT_DIR=/srv/beegfs02/scratch/3d_tracking/data/video_depth/samba/outputs/${DATASET}/${JOB_NAME}/
 BS=1 
 DATA_ROOT=/cluster/work/cvl/segum/datasets/mot/data/
-CMD=scripts/hpc/euler/tools/dist_main.sh
+CMD=./scripts/hpc/octopus/tools/dist_main.sh
 
 echo "Starting job ${JOB_NAME} from ${CONFIG}" 
 
 mkdir -p resources/errors/ 
 mkdir -p resources/outputs/
 
-${CMD} \
+bash ${CMD} \
 ${GPUS} \
      --config-path ${CONFIG} \
      --outputs-dir ${OUT_DIR} \

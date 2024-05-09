@@ -1,13 +1,11 @@
 #!/bin/bash
 DATASET=dancetrack
-JOB_NAME=sambamotr_masking_sync
-CONFIG=./configs/sambamotr/${DATASET}/def_detr/train_masking_sync.yaml
+JOB_NAME=sambamotr_masking_sync_longer
+CONFIG=./configs/sambamotr/${DATASET}/def_detr/train_masking_sync_longer.yaml
 
 # rescale
 BS_PER_GPU=1
-BS=`echo $GPUS*$BS_PER_GPU | bc`
 GPUS=8
-
 #########################
 # BASE LR PARAMETERS
 # LR=0.0002

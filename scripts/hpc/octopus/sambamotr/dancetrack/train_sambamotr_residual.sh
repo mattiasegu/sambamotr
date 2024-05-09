@@ -1,7 +1,7 @@
 #!/bin/bash
 DATASET=dancetrack
-JOB_NAME=sambamotr_masking_sync
-CONFIG=./configs/sambamotr/${DATASET}/def_detr/train_masking_sync.yaml
+JOB_NAME=sambamotr_residual
+CONFIG=./configs/sambamotr/${DATASET}/def_detr/train_base.yaml
 
 # rescale
 BS_PER_GPU=1
