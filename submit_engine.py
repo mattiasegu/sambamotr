@@ -195,6 +195,12 @@ class Submitter:
                     result_line = f"{frame_idx+1}," \
                                   f"{tracks_result.ids[i].item()}," \
                                   f"{x1},{y1},{w},{h},1,-1,-1,-1\n"
+                elif self.dataset_name == "BFT":
+                    x1, y1, x2, y2 = tracks_result.boxes[i].tolist()
+                    w, h = x2 - x1, y2 - y1
+                    result_line = f"{frame_idx+1}," \
+                                  f"{tracks_result.ids[i].item()}," \
+                                  f"{x1},{y1},{w},{h},-1,-1,-1,-1\n"
                 else:
                     raise ValueError(f"{self.dataset_name} dataset is not supported for submit process.")
                 file.write(result_line)

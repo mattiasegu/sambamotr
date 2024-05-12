@@ -105,6 +105,8 @@ def eval_model(model: str, eval_dir: str, data_root: str, dataset_name: str, dat
     data_dir = os.path.join(data_root, dataset_name)
     if dataset_name == "DanceTrack" or dataset_name == "SportsMOT":
         gt_dir = os.path.join(data_dir, data_split)
+    elif dataset_name == "BFT":
+        gt_dir = os.path.join(data_dir, "annotations_mot", data_split)
     elif "MOT17" in dataset_name:
         gt_dir = os.path.join(data_dir, "images", data_split)
     else:
@@ -112,6 +114,14 @@ def eval_model(model: str, eval_dir: str, data_root: str, dataset_name: str, dat
     if dataset_name == "DanceTrack" or dataset_name == "SportsMOT":
         os.system(f"python3 SparseTrackEval/scripts/run_mot_challenge.py --SPLIT_TO_EVAL {data_split}  "
                   f"--METRICS HOTA CLEAR Identity  --GT_FOLDER {gt_dir} "
+                  f"--SEQMAP_FILE {os.path.join(data_dir, f'{data_split}_seqmap.txt')} "
+                  f"--SKIP_SPLIT_FOL True --TRACKERS_TO_EVAL '' --TRACKER_SUB_FOLDER ''  --USE_PARALLEL True "
+                  f"--NUM_PARALLEL_CORES 8 --PLOT_CURVES False "
+                  f"--TRACKERS_FOLDER {tracker_mv_dir} --EVAL_INTERVAL {interval}")
+    elif dataset_name == "BFT":
+        os.system(f"python3 SparseTrackEval/scripts/run_bft.py --SPLIT_TO_EVAL {data_split}  "
+                  f"--METRICS HOTA CLEAR Identity  --GT_FOLDER {gt_dir} "
+                  f"--GT_LOC_FORMAT {{gt_folder}}/{{seq}}.txt "
                   f"--SEQMAP_FILE {os.path.join(data_dir, f'{data_split}_seqmap.txt')} "
                   f"--SKIP_SPLIT_FOL True --TRACKERS_TO_EVAL '' --TRACKER_SUB_FOLDER ''  --USE_PARALLEL True "
                   f"--NUM_PARALLEL_CORES 8 --PLOT_CURVES False "

@@ -57,6 +57,12 @@ python test.py
 
 You should put the unzipped MOT17 and CrowdHuman datasets into the `DATADIR/MOT17/images/` and `DATADIR/CrowdHuman/images/`, respectively. And then generate the ground truth files by running the corresponding script: [./data/gen_mot17_gts.py](./data/gen_mot17_gts.py) and [./data/gen_crowdhuman_gts.py](./data/gen_crowdhuman_gts.py). 
 
+If a dataset does not provide the `${SPLIT}_seqmap.txt` file, you can generate it with
+
+```shell
+python data/gen_seqmap.py --data-dir $DATA_DIR --split $SPLIT
+```
+
 Finally, you should get the following dataset structure:
 ```
 DATADIR/
@@ -96,10 +102,10 @@ We initialize our model with the official Deformable-DETR (with R50 backbone) we
 
 ### In-domain Pre-training (Optional)
 Optionally, you can load our in-domain pre-trained detection model.
-
 ```shell
 cd pretrained
 gdown 1zxkzHXuczrVr_rAAAZExVhIgQyi8QeAW  # DanceTrack
+gdown 1g3x-6o0TmrkZp14XE6g-4R9TdnIZ355f  # SportsMOT
 ```
 ## Pretrain (DAB-DETR)
 

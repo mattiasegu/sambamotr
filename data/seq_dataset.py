@@ -13,6 +13,9 @@ class SeqDataset(Dataset):
         if "BDD100K" in seq_dir:
             image_paths = sorted(os.listdir(os.path.join(seq_dir)))
             image_paths = [os.path.join(seq_dir, _) for _ in image_paths if ("jpg" in _) or ("png" in _)]
+        elif "BFT" in seq_dir:
+            image_paths = sorted(os.listdir(os.path.join(seq_dir)))
+            image_paths = [os.path.join(seq_dir, _) for _ in image_paths if ("jpg" in _) or ("png" in _)]
         else:
             image_paths = sorted(os.listdir(os.path.join(seq_dir, "img1")))
             image_paths = [os.path.join(seq_dir, "img1", _) for _ in image_paths if ("jpg" in _) or ("png" in _)]

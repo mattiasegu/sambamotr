@@ -80,3 +80,30 @@ trackeval.utils.TrackEvalException: Tracking contains the following invalid time
 
 
 
+BFT
+
+Traceback (most recent call last):
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/eval.py", line 88, in evaluate
+    res[curr_seq] = eval_sequence(curr_seq, dataset, tracker, class_list, metrics_list,
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/_timing.py", line 17, in wrap
+    result = f(*args, **kw)
+             ^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/eval.py", line 197, in eval_sequence
+    data = dataset.get_preprocessed_seq_data(raw_data, cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/_timing.py", line 17, in wrap
+    result = f(*args, **kw)
+             ^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/datasets/bft.py", line 309, in get_preprocessed_seq_data
+    distractor_classes = [self.class_name_to_class_id[x] for x in distractor_class_names]
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/datasets/bft.py", line 309, in <listcomp>
+    distractor_classes = [self.class_name_to_class_id[x] for x in distractor_class_names]
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+KeyError: 'person_on_vehicle'
+
+
+
+
+

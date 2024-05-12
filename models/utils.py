@@ -101,7 +101,7 @@ def pos_to_pos_embed(pos, num_pos_feats: int = 64, temperature: int = 10000, sca
     return pos_embed
 
 
-def load_pretrained_model(model: nn.Module, pretrained_path: str, show_details: bool = False):
+def load_pretrained_model(model: nn.Module, pretrained_path: str, show_details: bool = False, category_id: int = 1):
     if not is_main_process():
         return model
     pretrained_checkpoint = torch.load(pretrained_path, map_location=lambda storage, loc: storage)
@@ -114,16 +114,10 @@ def load_pretrained_model(model: nn.Module, pretrained_path: str, show_details: 
             if model_state_dict[k].shape != pretrained_state_dict[k].shape:
                 if "class_embed" in k:
                     if model_state_dict[k].shape[0] == 1:
-                        pretrained_state_dict[k] = pretrained_state_dict[k][1:2]
-                    elif model_state_dict[k].shape[0] == 2:
-                        pretrained_state_dict[k] = pretrained_state_dict[k][1:3]
-                    elif model_state_dict[k].shape[0] == 3:
-                        pretrained_state_dict[k] = pretrained_state_dict[k][1:4]
-                    elif model_state_dict[k].shape[0] == 8:     # BDD100K
+                        pretrained_state_dict[k] = pretrained_state_dict[k][category_id:category_id+1]  # 1 for person, 15 for bird
+                    else:     # BDD100K
                         pretrained_state_dict[k] = model_state_dict[k]
                         # We directly do not use the pretrained class embed for BDD100K
-                    else:
-                        raise NotImplementedError('invalid shape: {}'.format(model_state_dict[k].shape))
                 else:
                     print(f"Parameter {k} has shape{pretrained_state_dict[k].shape} in pretrained model, "
                           f"but get shape{model_state_dict[k].shape} in current model.")

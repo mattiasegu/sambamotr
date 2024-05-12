@@ -17,6 +17,7 @@ The above features can be achieved in a single .py file or multi of them.
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.data import RandomSampler, SequentialSampler, DataLoader
 from .dancetrack import build as build_dancetrack
+from .bft import build as build_bft
 from .mot17 import build as build_mot17
 from .bdd100k import build as build_bbd100k
 from .mot import MOTDataset
@@ -29,6 +30,8 @@ def build_dataset(config: dict, split: str) -> MOTDataset:
         return build_dancetrack(config=config, split=split)
     elif config["DATASET"] == "SportsMOT":
         return build_dancetrack(config=config, split=split)
+    if config["DATASET"] == "BFT":
+        return build_bft(config=config, split=split)
     elif config["DATASET"] == "MOT17":
         return build_mot17(config=config, split=split)
     elif config["DATASET"] == "MOT17_SPLIT":

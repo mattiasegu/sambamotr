@@ -38,9 +38,11 @@ def train(config: dict):
 
     model = build_model(config=config)
 
+    category_id = config["CATEGORY_ID"] if "CATEGORY_ID" in config else 1  # default category is person
+
     # Load Pretrained Model
     if config["PRETRAINED_MODEL"] is not None:
-        model = load_pretrained_model(model, config["PRETRAINED_MODEL"], show_details=False)
+        model = load_pretrained_model(model, config["PRETRAINED_MODEL"], show_details=False, category_id=category_id)
 
     # Data process
     dataset_train = build_dataset(config=config, split="train")
@@ -110,8 +112,8 @@ def train(config: dict):
 
     multi_checkpoint = "MULTI_CHECKPOINT" in config and config["MULTI_CHECKPOINT"]
     
-    # config["EVAL_INTERVAL"] = 100
-    # eval_model(config, model, outputs_dir, val_split, writer=tb_writer, epoch=0)
+    config["EVAL_INTERVAL"] = 50
+    eval_model(config, model, outputs_dir, val_split, writer=tb_writer, epoch=0)
     
     # Training:
     for epoch in range(start_epoch, config["EPOCHS"]):
@@ -201,6 +203,9 @@ def eval_model(config: dict, model: MeMOTR, outputs_dir: str, val_split: str, wr
     data_dir = os.path.join(data_root, dataset_name)
     if dataset_name == "DanceTrack" or dataset_name == "SportsMOT":
         data_split_dir = os.path.join(data_dir, val_split)
+    elif dataset_name == "BFT":
+        data_split_dir = os.path.join(data_dir, val_split)
+        gt_split_dir = os.path.join(data_dir, "annotations_mot", val_split)
     elif dataset_name == "BDD100K":
         data_split_dir = os.path.join(data_dir, "images/track/", val_split)
     elif "MOT17" in dataset_name:
@@ -259,6 +264,14 @@ def eval_model(config: dict, model: MeMOTR, outputs_dir: str, val_split: str, wr
                     f"--SKIP_SPLIT_FOL True --TRACKERS_TO_EVAL '' --TRACKER_SUB_FOLDER ''  --USE_PARALLEL True "
                     f"--NUM_PARALLEL_CORES 8 --PLOT_CURVES False "
                     f"--TRACKERS_FOLDER {tracker_mv_dir} --EVAL_INTERVAL {interval}")
+        elif dataset_name == "BFT":
+            os.system(f"python3 SparseTrackEval/scripts/run_bft.py --SPLIT_TO_EVAL {val_split}  "
+                    f"--METRICS HOTA CLEAR Identity  --GT_FOLDER {gt_split_dir} "
+                    f"--GT_LOC_FORMAT {{gt_folder}}/{{seq}}.txt "
+                    f"--SEQMAP_FILE {os.path.join(data_dir, f'{val_split}_seqmap.txt')} "
+                    f"--SKIP_SPLIT_FOL True --TRACKERS_TO_EVAL '' --TRACKER_SUB_FOLDER ''  --USE_PARALLEL True "
+                    f"--NUM_PARALLEL_CORES 8 --PLOT_CURVES False "
+                    f"--TRACKERS_FOLDER {tracker_mv_dir} --EVAL_INTERVAL {interval}")
         elif "MOT17" in dataset_name:
             if "mot15" in val_split:
                 os.system(f"python3 SparseTrackEval/scripts/run_mot_challenge.py --SPLIT_TO_EVAL {val_split}  "
@@ -277,7 +290,10 @@ def eval_model(config: dict, model: MeMOTR, outputs_dir: str, val_split: str, wr
         else:
             raise NotImplementedError(f"Do not support this Dataset name: {dataset_name}")
 
-        metric_path = os.path.join(tracker_mv_dir, "pedestrian_summary.txt")
+        if dataset_name == "BFT":
+            metric_path = os.path.join(tracker_mv_dir, "bird_summary.txt")
+        else:
+            metric_path = os.path.join(tracker_mv_dir, "pedestrian_summary.txt")
         with open(metric_path) as f:
             metric_names = f.readline()[:-1].split(" ")
             metric_values = f.readline()[:-1].split(" ")

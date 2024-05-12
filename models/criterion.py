@@ -507,6 +507,7 @@ def build(config: dict):
         "DanceTrack": 1,
         "SportsMOT": 1,
         "MOT17": 1,
+        "BFT": 1,
         "MOT17_SPLIT": 1,
         "BDD100K": 8,
     }

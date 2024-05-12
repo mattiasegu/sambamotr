@@ -77,7 +77,7 @@ USE_DAB: False
 UPDATE_THRESH: 0.5
 LONG_MEMORY_LAMBDA: 0.01
 # Pretrain model
-PRETRAINED_MODEL: pretrained/deformable_detr.pth
+PRETRAINED_MODEL: pretrained/r50_deformable_detr_coco_sportsmot.pth
 
 # Samba
 STATE_DIM: 8
@@ -96,21 +96,25 @@ SAMBA_NUM_HEADS: 8
 SAMBA_DROPOUT: 0.0
 UPDATE_ONLY_POS: False
 MASKING: True
-RESIDUAL: False
+RESIDUAL: True
 REF_PTS_RESIDUAL: False
 DETACH: False
 
 # Sampling setting
 SAMPLE_STEPS: []
-SAMPLE_LENGTHS: [5]
+SAMPLE_LENGTHS: [10]
 SAMPLE_MODES: [random_interval]
-SAMPLE_INTERVALS: [10]
+SAMPLE_INTERVALS: [10]  # TODO: try with 5
+
+# Gradient setting
+NO_GRAD_STEPS: [0]
+NO_GRAD_FRAMES: [5]
 
 # Training setting
 SEED: 42
-EPOCHS: 28
+EPOCHS: 20
 EVAL_EPOCHS: 1
-ONLY_TRAIN_QUERY_UPDATER_AFTER: 28
+ONLY_TRAIN_QUERY_UPDATER_AFTER: 20
 DROPOUT: 0.0
 NUM_DET_QUERIES: 300
 # training augmentation
@@ -123,7 +127,7 @@ WEIGHT_DECAY: 0.0005
 CLIP_MAX_NORM: 0.1
 LR_SCHEDULER: MultiStep
 LR_DROP_RATE: 0.1
-LR_DROP_MILESTONES: [15]  # TODO: maybe sooner and maybe more than one?
+LR_DROP_MILESTONES: [10, 16]
 # DETR matcher
 MATCH_COST_CLASS: 2
 MATCH_COST_BBOX: 5
