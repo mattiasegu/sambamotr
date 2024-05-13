@@ -1,7 +1,7 @@
 #!/bin/bash
-DATASET=dancetrack
-JOB_NAME=sambamotr_masking_sync_longer
-CONFIG=./configs/sambamotr/${DATASET}/def_detr/train_masking_sync_longer.yaml
+DATASET=sportsmot
+JOB_NAME=sambamotr_residual_masking_sync_longer
+CONFIG=./configs/sambamotr/${DATASET}/def_detr/train_residual_masking_sync_longer.yaml
 
 # rescale
 BS_PER_GPU=1
@@ -26,6 +26,7 @@ BS=1
 DATA_ROOT=/cluster/work/cvl/segum/datasets/mot/data/
 CMD=./scripts/hpc/octopus/tools/dist_main.sh
 
+echo "Launching ${CMD} on ${GPUS} gpus."
 echo "Starting job ${JOB_NAME} from ${CONFIG}" 
 
 mkdir -p resources/errors/ 
