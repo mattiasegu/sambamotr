@@ -1,40 +1,40 @@
 #!/usr/bin/env bash
-module load gcc/8.2.0
-module load python/3.11.2
-module load cuda/11.8.0
-module load nccl/2.16.2-1
-module load cudnn/8.4.0.27
+module load gcc/8.2.0 python/3.11.2 cuda/11.8.0 nccl/2.16.2-1 cudnn/8.4.0.27
 
 # load venv
 WORKSPACE=/cluster/work/cvl/segum/workspaces
 export PYTHONPATH=${WORKSPACE}/sambamotr/venv/sambamotr/bin/python
 source ${WORKSPACE}/sambamotr/venv/sambamotr/bin/activate
 
-GPUS=$1
+
+PORT=$1
+GPUS=$2
+PYARGS=${@:3}
+
 NNODES=${NNODES:-1}
 NODE_RANK=${NODE_RANK:-0}
-PORT=${PORT:-29500}
-MASTER_ADDR=${MASTER_ADDR:-"127.0.0.1"}
-PYARGS=${@:2}
 
-PORT=$(shuf -i 24000-29500 -n 1)
-echo "Copying dataset to tmp dir"
+export MASTER_PORT=$PORT
+echo "MASTER_PORT="$MASTER_PORT
 
-###############
+master_addr=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
+export MASTER_ADDR=$master_addr
+echo "MASTER_ADDR="$MASTER_ADDR
+echo "Node rank="$SLURM_NODEID
+echo "SLURM_NNODES="$SLURM_NNODES
+echo "SLURM_GPUS_ON_NODE="$SLURM_GPUS_ON_NODE
+
+
+##############################
 ##### Data preprocessing
-DATA_ROOT=${TMPDIR}/data  # New data root value
-mkdir -p ${DATA_ROOT}/DanceTrack/
-cp -r /cluster/work/cvl/segum/datasets/mot/data/DanceTrack/annotations ${DATA_ROOT}/DanceTrack/
-cp /cluster/work/cvl/segum/datasets/mot/data/DanceTrack/train.tar ${DATA_ROOT}/DanceTrack/
-cp /cluster/work/cvl/segum/datasets/mot/data/DanceTrack/train_seqmap.txt ${DATA_ROOT}/DanceTrack/
-cp /cluster/work/cvl/segum/datasets/mot/data/DanceTrack/val.tar ${DATA_ROOT}/DanceTrack/
-cp /cluster/work/cvl/segum/datasets/mot/data/DanceTrack/val_seqmap.txt ${DATA_ROOT}/DanceTrack/
-tar -xf ${DATA_ROOT}/DanceTrack/train.tar -C ${DATA_ROOT}/DanceTrack/
-tar -xf ${DATA_ROOT}/DanceTrack/val.tar -C ${DATA_ROOT}/DanceTrack/
-###############
+##############################
+bash scripts/hpc/euler/sambamotr/bft/bft_copy.sh
 
-###############
+DATA_ROOT=${TMPDIR}/data
+
+##############################
 ##### Argument manipulation (override DATA_ROOT)
+##############################
 
 # Initialize an empty string for the new arguments
 NEW_PYARGS=""
@@ -64,14 +64,12 @@ done
 echo $NEW_PYARGS
 ###############
 
-# export NCCL_DEBUG=INFO
-# export NCCL_DEBUG_SUBSYS=ALL
-# export TORCH_CPP_LOG_LEVEL=INFO
-# export TORCH_DISTRIBUTED_DEBUG=DETAIL
-# export PYTHONFAULTHANDLER=1
-# export CUDA_LAUNCH_BLOCKING=1
 export MPLBACKEND=Agg
 
+echo ${PYARGS}
+
+# srun -c 4 --kill-on-bad-exit=1 python -u main.py ${NEW_PYARGS}
+  
 torchrun \
     --nnodes=$NNODES \
     --node_rank=$NODE_RANK \
@@ -79,5 +77,4 @@ torchrun \
     --nproc_per_node=$GPUS \
     --master_port=$PORT \
     main.py \
-    --use-distributed \
-    $NEW_PYARGS
+    ${NEW_PYARGS}

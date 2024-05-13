@@ -11,14 +11,14 @@ CPUS_PER_TASK=${CPUS}
 
 
 
-srun --gpus=${GPUS_PER_NODE} --gres=gpumem:20g \
+srun --kill-on-bad-exit=1 --gpus=${GPUS_PER_NODE} --gres=gpumem:20g \
     --ntasks=${GPUS} \
     --ntasks-per-node=${GPUS_PER_NODE} \
     --cpus-per-task=${CPUS_PER_TASK} \
     --mem-per-cpu=${MEM_PER_CPU}  \
     --job-name "InteractiveJob" --time=${TIME} --pty bash
 
-# srun --gpus=rtx_4090:${GPUS_PER_NODE} --gres=gpumem:20g \
+# srun --kill-on-bad-exit=1 --gpus=rtx_4090:${GPUS_PER_NODE} --gres=gpumem:20g \
 #     --ntasks=${GPUS} \
 #     --ntasks-per-node=${GPUS_PER_NODE} \
 #     --cpus-per-task=${CPUS_PER_TASK} \
@@ -26,7 +26,7 @@ srun --gpus=${GPUS_PER_NODE} --gres=gpumem:20g \
 #     --job-name "InteractiveJob" --time=${TIME} --pty bash
 
 
-# srun --gpus=rtx_3090:${GPUS_PER_NODE} --gres=gpumem:20g \
+# srun --kill-on-bad-exit=1 --gpus=rtx_3090:${GPUS_PER_NODE} --gres=gpumem:20g \
 #     --ntasks=${GPUS} \
 #     --ntasks-per-node=${GPUS_PER_NODE} \
 #     --cpus-per-task=${CPUS_PER_TASK} \

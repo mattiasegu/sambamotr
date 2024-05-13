@@ -112,8 +112,8 @@ def train(config: dict):
 
     multi_checkpoint = "MULTI_CHECKPOINT" in config and config["MULTI_CHECKPOINT"]
     
-    config["EVAL_INTERVAL"] = 50
-    eval_model(config, model, outputs_dir, val_split, writer=tb_writer, epoch=0)
+    # config["EVAL_INTERVAL"] = 50
+    # eval_model(config, model, outputs_dir, val_split, writer=tb_writer, epoch=0)
     
     # Training:
     for epoch in range(start_epoch, config["EPOCHS"]):
