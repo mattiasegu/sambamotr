@@ -1,6 +1,6 @@
 #!/bin/bash
 DATASET=dancetrack
-JOB_NAME=sambamotr_residual
+JOB_NAME=sambamotr_residual_sync
 CONFIG=./configs/sambamotr/${DATASET}/def_detr/train_residual_sync.yaml
 
 # rescale
