@@ -39,20 +39,20 @@ EVAL_TRACKER=outputs/tmp/debug_memotr_dancetrack/val/checkpoint_0_tracker
 #      --TRACKERS_FOLDER ${EVAL_TRACKER} --EVAL_INTERVAL 50 
 
 
-# python -m debugpy --listen $HOSTNAME:5678 --wait-for-client main.py \
-#      --config-path ${CONFIG} \
-#      --outputs-dir ${OUT_DIR} \
-#      --batch-size ${BS} \
-#      --data-root ${DATA_ROOT} \
-#      --pretrained-model pretrained/r50_deformable_detr_plus_iterative_bbox_refinement-checkpoint.pth
-
-python main.py \
+python -m debugpy --listen $HOSTNAME:5678 --wait-for-client main.py \
      --config-path ${CONFIG} \
      --outputs-dir ${OUT_DIR} \
      --batch-size ${BS} \
      --data-root ${DATA_ROOT} \
-     --use-checkpoint \
      --pretrained-model pretrained/r50_deformable_detr_plus_iterative_bbox_refinement-checkpoint.pth
+
+# python main.py \
+#      --config-path ${CONFIG} \
+#      --outputs-dir ${OUT_DIR} \
+#      --batch-size ${BS} \
+#      --data-root ${DATA_ROOT} \
+#      --use-checkpoint \
+#      --pretrained-model pretrained/r50_deformable_detr_plus_iterative_bbox_refinement-checkpoint.pth
 
 
 # $CMD \
