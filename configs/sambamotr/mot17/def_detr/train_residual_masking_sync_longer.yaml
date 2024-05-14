@@ -41,7 +41,7 @@ EVAL_MODE: specific               # specific/continue
 EVAL_MODEL:
 EVAL_PORT:
 EVAL_THREADS: 1
-EVAL_DATA_SPLIT: val
+EVAL_DATA_SPLIT: mot15
 EVAL_INTERVAL: 1
 
 # About data processing
@@ -96,20 +96,25 @@ SAMBA_NUM_HEADS: 8
 SAMBA_DROPOUT: 0.0
 UPDATE_ONLY_POS: False
 MASKING: True
-RESIDUAL: False
+RESIDUAL: True
 REF_PTS_RESIDUAL: False
 DETACH: False
 
 # Sampling setting
 SAMPLE_STEPS: []
-SAMPLE_LENGTHS: [5]
+SAMPLE_LENGTHS: [10]
 SAMPLE_MODES: [random_interval]
 SAMPLE_INTERVALS: [10]
+SAMPLE_MOT17_JOIN: 0
+
+# Gradient setting
+NO_GRAD_STEPS: [0]
+NO_GRAD_FRAMES: [5]
 
 # Training setting
 SEED: 42
 EPOCHS: 100
-EVAL_EPOCHS: 1
+EVAL_EPOCHS: 5
 ONLY_TRAIN_QUERY_UPDATER_AFTER: 100
 DROPOUT: 0.0
 NUM_DET_QUERIES: 300
@@ -123,7 +128,7 @@ WEIGHT_DECAY: 0.0005
 CLIP_MAX_NORM: 0.1
 LR_SCHEDULER: MultiStep
 LR_DROP_RATE: 0.1
-LR_DROP_MILESTONES: [80]  # TODO: maybe sooner and maybe more than one?
+LR_DROP_MILESTONES: [50, 80]  # TODO: maybe sooner and maybe more than one?
 # DETR matcher
 MATCH_COST_CLASS: 2
 MATCH_COST_BBOX: 5

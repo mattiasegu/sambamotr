@@ -13,7 +13,7 @@ def mkdirs(d):
 
 
 
-def gen_mot17_gts(seq_root, label_root):
+def gen_mot15_gts(seq_root, label_root):
     mkdirs(label_root)
     seqs = [s for s in os.listdir(seq_root)]
 
@@ -31,9 +31,9 @@ def gen_mot17_gts(seq_root, label_root):
         seq_label_root = osp.join(label_root, seq, 'img1')
         mkdirs(seq_label_root)
 
-        for fid, tid, x, y, w, h, mark, label, _ in gt:
-            if mark == 0 or not label == 1:
-                continue
+        for fid, tid, x, y, w, h, conf, _, _, _ in gt:
+            # if mark == 0 or not label == 1:
+            #     continue
             fid = int(fid)
             tid = int(tid)
             if not tid == tid_last:
@@ -43,7 +43,7 @@ def gen_mot17_gts(seq_root, label_root):
             # y += h / 2
             label_fpath = osp.join(seq_label_root, '{:06d}.txt'.format(fid))
             label_str = '0 {:d} {:d} {:d} {:d} {:d} {:f}\n'.format(
-                tid_curr, int(x), int(y), int(w), int(h), float(_))
+                tid_curr, int(x), int(y), int(w), int(h), float(conf))
             with open(label_fpath, 'a') as f:
                 f.write(label_str)
 
@@ -53,14 +53,14 @@ def main():
     # Create argument parser
     parser = argparse.ArgumentParser(description='List folders in a directory and write them to a file.')
     # Add arguments
-    parser.add_argument('--data-dir', type=str, default='/data0/DatasetsForSambaMOTR/MOT17/images/train', help='Directory to list folders from')
-    parser.add_argument('--label-dir', type=str, default='/data0/DatasetsForSambaMOTR/MOT17/gts/train', help='Split to generate seqmap for')
+    parser.add_argument('--data-dir', type=str, default='/data0/DatasetsForSambaMOTR/MOT15/images/train', help='Directory to list folders from')
+    parser.add_argument('--label-dir', type=str, default='/data0/DatasetsForSambaMOTR/MOT15/gts/train', help='Split to generate seqmap for')
 
     # Parse arguments
     args = parser.parse_args()
 
     # Use the arguments
-    gen_mot17_gts(args.data_dir, args.label_dir)
+    gen_mot15_gts(args.data_dir, args.label_dir)
     print('Done')
 
 

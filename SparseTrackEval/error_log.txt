@@ -107,3 +107,162 @@ KeyError: 'person_on_vehicle'
 
 
 
+MotChallenge2DBox
+
+Traceback (most recent call last):
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/eval.py", line 88, in evaluate
+    res[curr_seq] = eval_sequence(curr_seq, dataset, tracker, class_list, metrics_list,
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/_timing.py", line 17, in wrap
+    result = f(*args, **kw)
+             ^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/eval.py", line 197, in eval_sequence
+    data = dataset.get_preprocessed_seq_data(raw_data, cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/_timing.py", line 17, in wrap
+    result = f(*args, **kw)
+             ^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/datasets/mot_challenge_2d_box.py", line 366, in get_preprocessed_seq_data
+    raise(TrackEvalException('Attempting to evaluate using invalid gt classes. '
+trackeval.utils.TrackEvalException: Attempting to evaluate using invalid gt classes. This warning only triggers if preprocessing is performed, e.g. not for MOT15 or where prepropressing is explicitly disabled. Please either check your gt data, or disable preprocessing. The following invalid classes were found in timestep 0: -1
+
+
+
+
+
+MotChallenge2DBox
+
+Traceback (most recent call last):
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/eval.py", line 88, in evaluate
+    res[curr_seq] = eval_sequence(curr_seq, dataset, tracker, class_list, metrics_list,
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/_timing.py", line 17, in wrap
+    result = f(*args, **kw)
+             ^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/eval.py", line 193, in eval_sequence
+    raw_data = dataset.get_raw_seq_data(tracker, seq)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/_timing.py", line 17, in wrap
+    result = f(*args, **kw)
+             ^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/datasets/_base_dataset.py", line 92, in get_raw_seq_data
+    raw_gt_data = self._load_raw_file(tracker, seq, is_gt=True)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/datasets/mot_challenge_2d_box.py", line 220, in _load_raw_file
+    raise TrackEvalException(
+trackeval.utils.TrackEvalException: Ground-truth contains the following invalid timesteps in seq KITTI-13: 1, , 201, 
+
+
+
+
+
+MotChallenge2DBox
+
+Traceback (most recent call last):
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/eval.py", line 88, in evaluate
+    res[curr_seq] = eval_sequence(curr_seq, dataset, tracker, class_list, metrics_list,
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/_timing.py", line 17, in wrap
+    result = f(*args, **kw)
+             ^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/eval.py", line 193, in eval_sequence
+    raw_data = dataset.get_raw_seq_data(tracker, seq)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/_timing.py", line 17, in wrap
+    result = f(*args, **kw)
+             ^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/datasets/_base_dataset.py", line 92, in get_raw_seq_data
+    raw_gt_data = self._load_raw_file(tracker, seq, is_gt=True)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/datasets/mot_challenge_2d_box.py", line 220, in _load_raw_file
+    raise TrackEvalException(
+trackeval.utils.TrackEvalException: Ground-truth contains the following invalid timesteps in seq KITTI-13: 1, , 201, 
+
+
+
+
+
+MotChallenge2DBox
+
+multiprocessing.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/BS/adaptive-tracking/work/miniconda3/envs/sambamotr/lib/python3.11/multiprocessing/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+                    ^^^^^^^^^^^^^^^^^^^
+  File "/BS/adaptive-tracking/work/miniconda3/envs/sambamotr/lib/python3.11/multiprocessing/pool.py", line 48, in mapstar
+    return list(map(*args))
+           ^^^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/_timing.py", line 64, in wrap
+    return f(*args, **kw)
+           ^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/eval.py", line 197, in eval_sequence
+    data = dataset.get_preprocessed_seq_data(raw_data, cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/_timing.py", line 64, in wrap
+    return f(*args, **kw)
+           ^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/datasets/mot_challenge_2d_box.py", line 366, in get_preprocessed_seq_data
+    raise(TrackEvalException('Attempting to evaluate using invalid gt classes. '
+trackeval.utils.TrackEvalException: Attempting to evaluate using invalid gt classes. This warning only triggers if preprocessing is performed, e.g. not for MOT15 or where prepropressing is explicitly disabled. Please either check your gt data, or disable preprocessing. The following invalid classes were found in timestep 0: -11 -9 -4
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/eval.py", line 83, in evaluate
+    results = pool.map(_eval_sequence, seq_list)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/BS/adaptive-tracking/work/miniconda3/envs/sambamotr/lib/python3.11/multiprocessing/pool.py", line 367, in map
+    return self._map_async(func, iterable, mapstar, chunksize).get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/BS/adaptive-tracking/work/miniconda3/envs/sambamotr/lib/python3.11/multiprocessing/pool.py", line 774, in get
+    raise self._value
+trackeval.utils.TrackEvalException: Attempting to evaluate using invalid gt classes. This warning only triggers if preprocessing is performed, e.g. not for MOT15 or where prepropressing is explicitly disabled. Please either check your gt data, or disable preprocessing. The following invalid classes were found in timestep 0: -11 -9 -4
+
+
+
+
+
+MotChallenge2DBox
+
+multiprocessing.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/BS/adaptive-tracking/work/miniconda3/envs/sambamotr/lib/python3.11/multiprocessing/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+                    ^^^^^^^^^^^^^^^^^^^
+  File "/BS/adaptive-tracking/work/miniconda3/envs/sambamotr/lib/python3.11/multiprocessing/pool.py", line 48, in mapstar
+    return list(map(*args))
+           ^^^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/_timing.py", line 64, in wrap
+    return f(*args, **kw)
+           ^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/eval.py", line 197, in eval_sequence
+    data = dataset.get_preprocessed_seq_data(raw_data, cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/_timing.py", line 64, in wrap
+    return f(*args, **kw)
+           ^^^^^^^^^^^^^^
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/datasets/mot_challenge_2d_box.py", line 366, in get_preprocessed_seq_data
+    raise(TrackEvalException('Attempting to evaluate using invalid gt classes. '
+trackeval.utils.TrackEvalException: Attempting to evaluate using invalid gt classes. This warning only triggers if preprocessing is performed, e.g. not for MOT15 or where prepropressing is explicitly disabled. Please either check your gt data, or disable preprocessing. The following invalid classes were found in timestep 0: -11 -9 -4
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/BS/diffusion-track/work/sambamotr/SparseTrackEval/trackeval/eval.py", line 83, in evaluate
+    results = pool.map(_eval_sequence, seq_list)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/BS/adaptive-tracking/work/miniconda3/envs/sambamotr/lib/python3.11/multiprocessing/pool.py", line 367, in map
+    return self._map_async(func, iterable, mapstar, chunksize).get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/BS/adaptive-tracking/work/miniconda3/envs/sambamotr/lib/python3.11/multiprocessing/pool.py", line 774, in get
+    raise self._value
+trackeval.utils.TrackEvalException: Attempting to evaluate using invalid gt classes. This warning only triggers if preprocessing is performed, e.g. not for MOT15 or where prepropressing is explicitly disabled. Please either check your gt data, or disable preprocessing. The following invalid classes were found in timestep 0: -11 -9 -4
+
+
+
+
+

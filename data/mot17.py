@@ -96,7 +96,7 @@ class MOT17(MOTDataset):
 
     def __getitem__(self, item):
         begin_frame_path = self.sample_begin_frame_paths[item]
-        frame_paths = self.sample_frame_paths(begin_frame_path=begin_frame_path)
+        frame_paths, interval = self.sample_frame_paths(begin_frame_path=begin_frame_path)
         imgs, infos = self.get_multi_frames(frame_paths=frame_paths)
 
         if infos[0]["dataset"] == "MOT17":
@@ -106,6 +106,7 @@ class MOT17(MOTDataset):
 
         return {
             "imgs": imgs,
+            "interval": interval,
             "infos": infos
         }
 
@@ -156,7 +157,7 @@ class MOT17(MOTDataset):
 
     def sample_frame_paths(self, begin_frame_path: str) -> list[str]:
         if "CrowdHuman" in begin_frame_path:
-            return [begin_frame_path] * self.sample_length
+            return [begin_frame_path] * self.sample_length, 1
         if self.sample_mode == "random_interval":
             assert self.sample_length > 1, "Sample Length is less than 2."
             vid = begin_frame_path.split("/")[-3]
@@ -170,7 +171,7 @@ class MOT17(MOTDataset):
             else:
                 frame_paths = [os.path.join(self.mot17_seqs_dir, vid, "img1", str(t).zfill(6) + ".jpg") for t in frame_idx]
 
-            return frame_paths
+            return frame_paths, interval
         else:
             raise NotImplementedError(f"Do not support sample mode '{self.sample_mode}'.")
 

@@ -75,7 +75,7 @@ def train(config: dict):
         raise ValueError(f"Do not support lr scheduler '{config['LR_SCHEDULER']}'")
 
     # Eval
-    val_split = "val"  # TODO: change it for MOT 17 (i.e. add it as flag in config file so that we can set mot15)
+    val_split = config["EVAL_DATA_SPLIT"] if "EVAL_DATA_SPLIT" in config else "val"
     # check diff from config["OUTPUTS_DIR"]
     outputs_dir = os.path.join(config["OUTPUTS_DIR"], val_split)
     tb_writer = tb.SummaryWriter(
@@ -112,8 +112,8 @@ def train(config: dict):
 
     multi_checkpoint = "MULTI_CHECKPOINT" in config and config["MULTI_CHECKPOINT"]
     
-    # config["EVAL_INTERVAL"] = 50
-    # eval_model(config, model, outputs_dir, val_split, writer=tb_writer, epoch=0)
+    config["EVAL_INTERVAL"] = 50
+    eval_model(config, model, outputs_dir, val_split, writer=tb_writer, epoch=0)
     
     # Training:
     for epoch in range(start_epoch, config["EPOCHS"]):
@@ -179,7 +179,7 @@ def train(config: dict):
                 )
                 link_checkpoint(save_path, link_path)
 
-        if epoch % config["EVAL_EPOCHS"] == 0:
+        if (epoch + 1) % config["EVAL_EPOCHS"] == 0:
             eval_model(config, model, outputs_dir, val_split, writer=tb_writer, epoch=epoch)
 
     return
@@ -209,7 +209,12 @@ def eval_model(config: dict, model: MeMOTR, outputs_dir: str, val_split: str, wr
     elif dataset_name == "BDD100K":
         data_split_dir = os.path.join(data_dir, "images/track/", val_split)
     elif "MOT17" in dataset_name:
-        data_split_dir = os.path.join(data_dir, "images", val_split)
+        benchmark = "MOT17"
+        if "mot15" in val_split:
+            data_dir = os.path.join(data_root, "MOT15")
+            val_split = "train"
+            benchmark = "MOT15"
+        data_split_dir = os.path.join(data_dir, "images", "train")
     else:
         raise NotImplementedError(f"Eval DOES NOT support dataset '{dataset_name}'")
 
@@ -273,20 +278,12 @@ def eval_model(config: dict, model: MeMOTR, outputs_dir: str, val_split: str, wr
                     f"--NUM_PARALLEL_CORES 8 --PLOT_CURVES False "
                     f"--TRACKERS_FOLDER {tracker_mv_dir} --EVAL_INTERVAL {interval}")
         elif "MOT17" in dataset_name:
-            if "mot15" in val_split:
-                os.system(f"python3 SparseTrackEval/scripts/run_mot_challenge.py --SPLIT_TO_EVAL {val_split}  "
-                        f"--METRICS HOTA CLEAR Identity  --GT_FOLDER {data_split_dir} "
-                        f"--SEQMAP_FILE {os.path.join(data_dir, f'{val_split}_seqmap.txt')} "
-                        f"--SKIP_SPLIT_FOL True --TRACKERS_TO_EVAL '' --TRACKER_SUB_FOLDER ''  --USE_PARALLEL True "
-                        f"--NUM_PARALLEL_CORES 8 --PLOT_CURVES False "
-                        f"--TRACKERS_FOLDER {tracker_mv_dir} --BENCHMARK MOT15 --EVAL_INTERVAL {interval}")
-            else:
-                os.system(f"python3 SparseTrackEval/scripts/run_mot_challenge.py --SPLIT_TO_EVAL {val_split}  "
-                        f"--METRICS HOTA CLEAR Identity  --GT_FOLDER {data_split_dir} "
-                        f"--SEQMAP_FILE {os.path.join(data_dir, f'{val_split}_seqmap.txt')} "
-                        f"--SKIP_SPLIT_FOL True --TRACKERS_TO_EVAL '' --TRACKER_SUB_FOLDER ''  --USE_PARALLEL True "
-                        f"--NUM_PARALLEL_CORES 8 --PLOT_CURVES False "
-                        f"--TRACKERS_FOLDER {tracker_mv_dir} --BENCHMARK MOT17 --EVAL_INTERVAL {interval}")
+            os.system(f"python3 SparseTrackEval/scripts/run_mot_challenge.py --SPLIT_TO_EVAL {val_split}  "
+                    f"--METRICS HOTA CLEAR Identity  --GT_FOLDER {data_split_dir} "
+                    f"--SEQMAP_FILE {os.path.join(data_dir, f'{val_split}_seqmap.txt')} "
+                    f"--SKIP_SPLIT_FOL True --TRACKERS_TO_EVAL '' --TRACKER_SUB_FOLDER ''  --USE_PARALLEL True "
+                    f"--NUM_PARALLEL_CORES 8 --PLOT_CURVES False "
+                    f"--TRACKERS_FOLDER {tracker_mv_dir} --BENCHMARK {benchmark} --EVAL_INTERVAL {interval}")
         else:
             raise NotImplementedError(f"Do not support this Dataset name: {dataset_name}")
 

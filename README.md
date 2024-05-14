@@ -63,6 +63,20 @@ If a dataset does not provide the `${SPLIT}_seqmap.txt` file, you can generate i
 python data/gen_seqmap.py --data-dir $DATA_DIR --split $SPLIT
 ```
 
+For example:
+```shell
+# DanceTrack
+python data/gen_seqmap.py --data-dir $ROOT_DIR/DanceTrack --split $SPLIT 
+
+# MOT17
+python data/gen_seqmap.py --data-dir $ROOT_DIR/MOT17/images --split $SPLIT --include SDP  
+mv $ROOT_DIR/MOT17/images/${SPLIT}_seqmap.txt $ROOT_DIR/MOT17/
+
+# MOT15
+python data/gen_seqmap.py --data-dir $ROOT_DIR/MOT15/images --split $SPLIT --exclude KITTI-13 
+mv $ROOT_DIR/MOT15/images/${SPLIT}_seqmap.txt $ROOT_DIR/MOT15/
+```
+
 Finally, you should get the following dataset structure:
 ```
 DATADIR/
@@ -86,6 +100,16 @@ DATADIR/
   │ │ └── test/      # unzip from MOT17
   │ └── gts/
   │   └── train/     # generate by ./data/gen_mot17_gts.py
+  │ ├── train_seqmap.txt
+  │ ├── test_seqmap.txt
+  ├── MOT15/
+  │ ├── images/
+  │ │ ├── train/     # unzip from MOT15
+  │ │ └── test/      # unzip from MOT15
+  │ └── gts/
+  │   └── train/     # generate by ./data/gen_mot15_gts.py
+  │ ├── train_seqmap.txt
+  │ ├── test_seqmap.txt
   └── CrowdHuman/
     ├── images/
     │ ├── train/     # unzip from CrowdHuman

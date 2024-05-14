@@ -11,7 +11,7 @@ JOB_NAME=debug_memotr_dancetrack
 # CONFIG=configs/sambamotr/sportsmot/def_detr/train_masking_sync.yaml
 # CONFIG=configs/sambamotr/dancetrack/def_detr/train_masking_sync.yaml
 # CONFIG=configs/masked_mambamotr/def_detr/train_dancetrack_residual_masking_sync.yaml
-CONFIG=configs/sambamotr/bft/def_detr/train_residual_masking_sync_longer.yaml
+CONFIG=configs/sambamotr/mot17/def_detr/train_residual_masking_sync_longer.yaml
 OUT_DIR=./outputs/tmp/${JOB_NAME}/
 BS=1 
 DATA_ROOT=/BS/diffusion-track/nobackup/data/mot
@@ -51,15 +51,8 @@ python main.py \
      --outputs-dir ${OUT_DIR} \
      --batch-size ${BS} \
      --data-root ${DATA_ROOT} \
+     --use-checkpoint \
      --pretrained-model pretrained/r50_deformable_detr_plus_iterative_bbox_refinement-checkpoint.pth
-
-# python main.py \
-#      --config-path ${CONFIG} \
-#      --outputs-dir ${OUT_DIR} \
-#      --batch-size ${BS} \
-#      --data-root ${DATA_ROOT} \
-#      --use-checkpoint \
-#      --pretrained-model pretrained/r50_deformable_detr_plus_iterative_bbox_refinement-checkpoint.pth
 
 
 # $CMD \
@@ -111,3 +104,17 @@ python main.py \
 #      --batch-size ${BS} \
 #      --data-root ${DATA_ROOT}
 #      # --use-checkpoint
+
+### TRACKEVAL ONLY
+# DATA_ROOT=/BS/diffusion-track/nobackup/data/mot/
+# SPLIT=train
+# DATASET=MOT15
+# EVAL_TRACKER=outputs/tmp/debug_memotr_dancetrack/mot15/checkpoint_0_tracker
+# python -m debugpy --listen $HOSTNAME:5678 --wait-for-client \
+# python \
+#      SparseTrackEval/scripts/run_mot_challenge.py --SPLIT_TO_EVAL train \
+#      --METRICS HOTA CLEAR Identity  --GT_FOLDER ${DATA_ROOT}/${DATASET}/images/${SPLIT} \
+#      --SEQMAP_FILE ${DATA_ROOT}/${DATASET}/${SPLIT}_seqmap.txt \
+#      --SKIP_SPLIT_FOL True --TRACKERS_TO_EVAL '' --TRACKER_SUB_FOLDER ''  \
+#      --USE_PARALLEL False --NUM_PARALLEL_CORES 8 --PLOT_CURVES False \
+#      --TRACKERS_FOLDER ${EVAL_TRACKER}  --BENCHMARK MOT15 --EVAL_INTERVAL 100

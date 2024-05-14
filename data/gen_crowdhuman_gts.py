@@ -8,6 +8,7 @@ import os
 import cv2
 import json
 import numpy as np
+import argparse
 
 
 def mkdirs(d):
@@ -53,13 +54,21 @@ def gen_labels_crowd(data_root, label_root, ann_root):
             tid_curr += 1
 
 
+def main():
+    # Create argument parser
+    parser = argparse.ArgumentParser(description='List folders in a directory and write them to a file.')
+    # Add arguments
+    parser.add_argument('--data-dir', type=str, default='/data0/DatasetsForMeMOTR/CrowdHuman/images/val', help='Directory to list folders from')
+    parser.add_argument('--label-dir', type=str, default='/data0/DatasetsForMeMOTR/CrowdHuman/gts/val', help='Split to generate seqmap for')
+    parser.add_argument('--ann-file', type=str, default='/data0/DatasetsForMeMOTR/CrowdHuman/annotation_val.odgt', help='Split to generate seqmap for')
+
+    # Parse arguments
+    args = parser.parse_args()
+
+    # Use the arguments
+    gen_labels_crowd(args.data_dir, args.label_dir, args.ann_file)
+    print('Done')
+
+
 if __name__ == '__main__':
-    # You should change the path to your own path:
-    data_val = "/data0/DatasetsForMeMOTR/CrowdHuman/images/val"
-    label_val = "/data0/DatasetsForMeMOTR/CrowdHuman/gts/val"
-    ann_val = "/data0/DatasetsForMeMOTR/CrowdHuman/annotation_val.odgt"
-    data_train = "/data0/DatasetsForMeMOTR/CrowdHuman/images/train"
-    label_train = "/data0/DatasetsForMeMOTR/CrowdHuman/gts/train"
-    ann_train = "/data0/DatasetsForMeMOTR/CrowdHuman/annotation_train.odgt"
-    gen_labels_crowd(data_train, label_train, ann_train)
-    gen_labels_crowd(data_val, label_val, ann_val)
+    main()
