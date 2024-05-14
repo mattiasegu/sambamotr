@@ -55,7 +55,7 @@ python test.py
 
 ## Data
 
-You should put the unzipped MOT17 and CrowdHuman datasets into the `DATADIR/MOT17/images/` and `DATADIR/CrowdHuman/images/`, respectively. And then generate the ground truth files by running the corresponding script: [./data/gen_mot17_gts.py](./data/gen_mot17_gts.py) and [./data/gen_crowdhuman_gts.py](./data/gen_crowdhuman_gts.py). 
+You should put the unzipped MOT17, MOT15 and CrowdHuman datasets into the `DATADIR/MOT17/images/`, `DATADIR/MOT15/images/` and `DATADIR/CrowdHuman/images/`, respectively. And then generate the ground truth files by running the corresponding script: [./data/gen_mot17_gts.py](./data/gen_mot17_gts.py), [./data/gen_mot15_gts.py](./data/gen_mot15_gts.py) and [./data/gen_crowdhuman_gts.py](./data/gen_crowdhuman_gts.py).
 
 If a dataset does not provide the `${SPLIT}_seqmap.txt` file, you can generate it with
 
@@ -65,16 +65,27 @@ python data/gen_seqmap.py --data-dir $DATA_DIR --split $SPLIT
 
 For example:
 ```shell
-# DanceTrack
+# DanceTrack (SPLIT in [train, val])
 python data/gen_seqmap.py --data-dir $ROOT_DIR/DanceTrack --split $SPLIT 
 
+# BFT (SPLIT in [train, val, test])
+python data/gen_seqmap.py --data-dir $ROOT_DIR/BFT --split $SPLIT 
+
 # MOT17
+SPLIT=train
 python data/gen_seqmap.py --data-dir $ROOT_DIR/MOT17/images --split $SPLIT --include SDP  
 mv $ROOT_DIR/MOT17/images/${SPLIT}_seqmap.txt $ROOT_DIR/MOT17/
+python data/gen_mot17_gts.py --data-dir $ROOT_DIR/MOT17/images/$SPLIT --label-dir $ROOT_DIR/MOT17/gts/$SPLIT
 
 # MOT15
-python data/gen_seqmap.py --data-dir $ROOT_DIR/MOT15/images --split $SPLIT --exclude KITTI-13 
+SPLIT=train
+python data/gen_seqmap.py --data-dir $ROOT_DIR/MOT15/images --split $SPLIT --exclude KITTI-13  # exclude KITTI-13 because partly unlabeled
 mv $ROOT_DIR/MOT15/images/${SPLIT}_seqmap.txt $ROOT_DIR/MOT15/
+python data/gen_mot15_gts.py --data-dir $ROOT_DIR/MOT15/images/$SPLIT --label-dir $ROOT_DIR/MOT15/gts/$SPLIT
+
+# CrowdHuman
+SPLIT=val
+python data/gen_crowdhuman_gts.py --data-dir $ROOT_DIR/CrowdHuman/$SPLIT --label-dir $ROOT_DIR/CrowdHuman/gts/$SPLIT --ann-file $ROOT_DIR/CrowdHuman/annotation_$SPLIT.odgt
 ```
 
 Finally, you should get the following dataset structure:

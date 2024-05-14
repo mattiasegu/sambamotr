@@ -12,6 +12,6 @@ cp /cluster/work/cvl/segum/datasets/mot/data/BFT/val_seqmap.txt ${DATA_ROOT}/BFT
 mkdir -p ${DATA_ROOT}/BFT/train/
 mkdir -p ${DATA_ROOT}/BFT/val/
 
-unzip ${DATA_ROOT}/BFT/train.zip -d ${DATA_ROOT}/BFT/train
-unzip ${DATA_ROOT}/BFT/val.zip -d ${DATA_ROOT}/BFT/val
+unzip -q ${DATA_ROOT}/BFT/train.zip -d ${DATA_ROOT}/BFT/train
+unzip -q ${DATA_ROOT}/BFT/val.zip -d ${DATA_ROOT}/BFT/val
 ###############
