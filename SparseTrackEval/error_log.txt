@@ -266,3 +266,93 @@ trackeval.utils.TrackEvalException: Attempting to evaluate using invalid gt clas
 
 
 
+MotChallenge2DBox
+
+multiprocessing.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.11.2/x86_64/lib64/python3.11/multiprocessing/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+                    ^^^^^^^^^^^^^^^^^^^
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.11.2/x86_64/lib64/python3.11/multiprocessing/pool.py", line 48, in mapstar
+    return list(map(*args))
+           ^^^^^^^^^^^^^^^^
+  File "/cluster/home/segum/Projects/SambaMOTR/SparseTrackEval/trackeval/_timing.py", line 64, in wrap
+    return f(*args, **kw)
+           ^^^^^^^^^^^^^^
+  File "/cluster/home/segum/Projects/SambaMOTR/SparseTrackEval/trackeval/eval.py", line 193, in eval_sequence
+    raw_data = dataset.get_raw_seq_data(tracker, seq)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/cluster/home/segum/Projects/SambaMOTR/SparseTrackEval/trackeval/_timing.py", line 64, in wrap
+    return f(*args, **kw)
+           ^^^^^^^^^^^^^^
+  File "/cluster/home/segum/Projects/SambaMOTR/SparseTrackEval/trackeval/datasets/_base_dataset.py", line 92, in get_raw_seq_data
+    raw_gt_data = self._load_raw_file(tracker, seq, is_gt=True)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/cluster/home/segum/Projects/SambaMOTR/SparseTrackEval/trackeval/datasets/mot_challenge_2d_box.py", line 220, in _load_raw_file
+    raise TrackEvalException(
+trackeval.utils.TrackEvalException: Ground-truth contains the following invalid timesteps in seq KITTI-13: 1, , 151, , 201, 
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/cluster/home/segum/Projects/SambaMOTR/SparseTrackEval/trackeval/eval.py", line 83, in evaluate
+    results = pool.map(_eval_sequence, seq_list)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.11.2/x86_64/lib64/python3.11/multiprocessing/pool.py", line 367, in map
+    return self._map_async(func, iterable, mapstar, chunksize).get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.11.2/x86_64/lib64/python3.11/multiprocessing/pool.py", line 774, in get
+    raise self._value
+trackeval.utils.TrackEvalException: Ground-truth contains the following invalid timesteps in seq KITTI-13: 1, , 151, , 201, 
+
+
+
+
+
+MotChallenge2DBox
+
+multiprocessing.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.11.2/x86_64/lib64/python3.11/multiprocessing/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+                    ^^^^^^^^^^^^^^^^^^^
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.11.2/x86_64/lib64/python3.11/multiprocessing/pool.py", line 48, in mapstar
+    return list(map(*args))
+           ^^^^^^^^^^^^^^^^
+  File "/cluster/home/segum/Projects/SambaMOTR/SparseTrackEval/trackeval/_timing.py", line 64, in wrap
+    return f(*args, **kw)
+           ^^^^^^^^^^^^^^
+  File "/cluster/home/segum/Projects/SambaMOTR/SparseTrackEval/trackeval/eval.py", line 193, in eval_sequence
+    raw_data = dataset.get_raw_seq_data(tracker, seq)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/cluster/home/segum/Projects/SambaMOTR/SparseTrackEval/trackeval/_timing.py", line 64, in wrap
+    return f(*args, **kw)
+           ^^^^^^^^^^^^^^
+  File "/cluster/home/segum/Projects/SambaMOTR/SparseTrackEval/trackeval/datasets/_base_dataset.py", line 92, in get_raw_seq_data
+    raw_gt_data = self._load_raw_file(tracker, seq, is_gt=True)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/cluster/home/segum/Projects/SambaMOTR/SparseTrackEval/trackeval/datasets/mot_challenge_2d_box.py", line 220, in _load_raw_file
+    raise TrackEvalException(
+trackeval.utils.TrackEvalException: Ground-truth contains the following invalid timesteps in seq KITTI-13: 1, , 151, , 201, 
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/cluster/home/segum/Projects/SambaMOTR/SparseTrackEval/trackeval/eval.py", line 83, in evaluate
+    results = pool.map(_eval_sequence, seq_list)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.11.2/x86_64/lib64/python3.11/multiprocessing/pool.py", line 367, in map
+    return self._map_async(func, iterable, mapstar, chunksize).get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.11.2/x86_64/lib64/python3.11/multiprocessing/pool.py", line 774, in get
+    raise self._value
+trackeval.utils.TrackEvalException: Ground-truth contains the following invalid timesteps in seq KITTI-13: 1, , 151, , 201, 
+
+
+
+
+

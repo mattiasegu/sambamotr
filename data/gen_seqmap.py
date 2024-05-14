@@ -2,7 +2,7 @@ import os
 import argparse
 
 
-def write_folder_names_to_file(directory, outfile, include):
+def write_folder_names_to_file(directory, outfile, include, exclude):
     # Get a list of names in the directory
     folder_names = [name for name in os.listdir(directory) if os.path.isdir(os.path.join(directory, name))]
     
@@ -12,7 +12,7 @@ def write_folder_names_to_file(directory, outfile, include):
         file.write('name\n')
         # Write each folder name to the file
         for folder in folder_names:
-            if include in folder:
+            if include in folder and exclude not in folder:
                 file.write(folder + '\n')
 
 # Example usage:
@@ -32,7 +32,7 @@ def main():
     # Use the arguments
     write_folder_names_to_file(directory=os.path.join(args.data_dir, args.split),
                                outfile=os.path.join(args.data_dir, f'{args.split}_seqmap.txt'),
-                               include=args.include)
+                               include=args.include, exclude=args.exclude)
 
 if __name__ == '__main__':
     main()
