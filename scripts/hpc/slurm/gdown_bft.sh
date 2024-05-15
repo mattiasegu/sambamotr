@@ -9,14 +9,14 @@ ACCESS_TOKEN=$1
 
 mkdir -p ${OUTDIR}/BFT
 
-FILE_ID=1iEebl-2yPjapQByOotoLG_0ud_1q_hZs  # train
-FILE_NAME=${OUTDIR}/BFT/train.zip
-curl -H "Authorization: Bearer $ACCESS_TOKEN" https://www.googleapis.com/drive/v3/files/$FILE_ID?alt=media -o $FILE_NAME 
-
-FILE_ID=1fwswUfxxmvcd7GQhveXThVYfK0eR0nbw  # val
-FILE_NAME=${OUTDIR}/BFT/val.zip
-curl -H "Authorization: Bearer $ACCESS_TOKEN" https://www.googleapis.com/drive/v3/files/$FILE_ID?alt=media -o $FILE_NAME 
-
-# FILE_ID=1OHXmtxyI_H6uoopyZZRDeNAsTZF9qXkp  # test
-# FILE_NAME=${OUTDIR}/BFT/test.zip
+# FILE_ID=1iEebl-2yPjapQByOotoLG_0ud_1q_hZs  # train
+# FILE_NAME=${OUTDIR}/BFT/train.zip
 # curl -H "Authorization: Bearer $ACCESS_TOKEN" https://www.googleapis.com/drive/v3/files/$FILE_ID?alt=media -o $FILE_NAME 
+
+# FILE_ID=1fwswUfxxmvcd7GQhveXThVYfK0eR0nbw  # val
+# FILE_NAME=${OUTDIR}/BFT/val.zip
+# curl -H "Authorization: Bearer $ACCESS_TOKEN" https://www.googleapis.com/drive/v3/files/$FILE_ID?alt=media -o $FILE_NAME 
+
+FILE_ID=1OHXmtxyI_H6uoopyZZRDeNAsTZF9qXkp  # test
+FILE_NAME=${OUTDIR}/BFT/test.zip
+curl -H "Authorization: Bearer $ACCESS_TOKEN" https://www.googleapis.com/drive/v3/files/$FILE_ID?alt=media -o $FILE_NAME 
