@@ -128,7 +128,7 @@ WEIGHT_DECAY: 0.0005
 CLIP_MAX_NORM: 0.1
 LR_SCHEDULER: MultiStep
 LR_DROP_RATE: 0.1
-LR_DROP_MILESTONES: [50, 80]  # TODO: maybe sooner and maybe more than one?
+LR_DROP_MILESTONES: [40, 60]  # TODO: maybe sooner and maybe more than one?
 # DETR matcher
 MATCH_COST_CLASS: 2
 MATCH_COST_BBOX: 5
