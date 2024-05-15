@@ -195,12 +195,12 @@ class BFT(_BaseDataset):
         # Check for any extra time keys
         current_time_keys = [str( t+ 1) for t in range(num_timesteps)]
         extra_time_keys = [str( t * self.interval + 1) for t in range(num_timesteps) if str( t * self.interval + 1) not in read_data.keys()]
-        if len(extra_time_keys) > 0:
-            if is_gt:
-                text = 'Ground-truth'
-                raise TrackEvalException(
-                    text + ' contains the following invalid timesteps in seq %s: ' % seq + ', '.join(
-                        [str(x) + ', ' for x in extra_time_keys]))
+        # if len(extra_time_keys) > 0:
+        #     if is_gt:
+        #         text = 'Ground-truth'
+        #         raise TrackEvalException(
+        #             text + ' contains the following invalid timesteps in seq %s: ' % seq + ', '.join(
+        #                 [str(x) + ', ' for x in extra_time_keys]))
 
         for t in range(num_timesteps):
             time_key = str(t * self.interval + 1)

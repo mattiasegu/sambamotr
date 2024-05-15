@@ -94,12 +94,11 @@ def train(config: dict):
         if os.path.exists(load_path):
             if config["RESUME_SCHEDULER"]:
                 load_checkpoint(model=model, path=load_path, states=train_states,
-                                optimizer=optimizer)
+                                optimizer=optimizer, scheduler=scheduler)
             else:
                 load_checkpoint(model=model, path=load_path, states=train_states)
-                
-            for _ in range(train_states["start_epoch"]):
-                scheduler.step()
+                for _ in range(train_states["start_epoch"]):
+                    scheduler.step()
         else:
             train_logger.show(head=f"{load_path} does not exist. Initializing model from scratch.")
             train_logger.write(head=f"{load_path} does not exist. Initializing model from scratch.")
