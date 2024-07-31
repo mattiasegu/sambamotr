@@ -30,6 +30,7 @@ venv/
 outputs
 resources/
 pretrained
+cache/
 
 *.pth
 *.mp4

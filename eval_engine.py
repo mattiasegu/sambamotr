@@ -113,9 +113,12 @@ def eval_model(model: str, eval_dir: str, data_root: str, dataset_name: str, dat
             data_dir = os.path.join(data_root, "MOT15")
             data_split = "train"
             benchmark = "MOT15"
-        gt_dir = os.path.join(data_dir, "images", "train")
+            gt_dir = os.path.join(data_dir, "images", "train")
+        else:
+            gt_dir = os.path.join(data_dir, "images", data_split)
     else:
         raise NotImplementedError(f"Eval Engine DO NOT support dataset '{dataset_name}'")
+    
     if dataset_name == "DanceTrack" or dataset_name == "SportsMOT":
         os.system(f"python3 SparseTrackEval/scripts/run_mot_challenge.py --SPLIT_TO_EVAL {data_split}  "
                   f"--METRICS HOTA CLEAR Identity  --GT_FOLDER {gt_dir} "
@@ -138,20 +141,6 @@ def eval_model(model: str, eval_dir: str, data_root: str, dataset_name: str, dat
                 f"--SKIP_SPLIT_FOL True --TRACKERS_TO_EVAL '' --TRACKER_SUB_FOLDER ''  --USE_PARALLEL True "
                 f"--NUM_PARALLEL_CORES 8 --PLOT_CURVES False "
                 f"--TRACKERS_FOLDER {tracker_mv_dir} --BENCHMARK {benchmark} --EVAL_INTERVAL {interval}")
-        if "mot15" in data_split:
-            os.system(f"python3 SparseTrackEval/scripts/run_mot_challenge.py --SPLIT_TO_EVAL {data_split}  "
-                      f"--METRICS HOTA CLEAR Identity  --GT_FOLDER {gt_dir} "
-                      f"--SEQMAP_FILE {os.path.join(data_dir, f'{data_split}_seqmap.txt')} "
-                      f"--SKIP_SPLIT_FOL True --TRACKERS_TO_EVAL '' --TRACKER_SUB_FOLDER ''  --USE_PARALLEL True "
-                      f"--NUM_PARALLEL_CORES 8 --PLOT_CURVES False "
-                      f"--TRACKERS_FOLDER {tracker_mv_dir} --BENCHMARK MOT15 --EVAL_INTERVAL {interval}")
-        else:
-            os.system(f"python3 SparseTrackEval/scripts/run_mot_challenge.py --SPLIT_TO_EVAL {data_split}  "
-                      f"--METRICS HOTA CLEAR Identity  --GT_FOLDER {gt_dir} "
-                      f"--SEQMAP_FILE {os.path.join(data_dir, f'{data_split}_seqmap.txt')} "
-                      f"--SKIP_SPLIT_FOL True --TRACKERS_TO_EVAL '' --TRACKER_SUB_FOLDER ''  --USE_PARALLEL True "
-                      f"--NUM_PARALLEL_CORES 8 --PLOT_CURVES False "
-                      f"--TRACKERS_FOLDER {tracker_mv_dir} --BENCHMARK MOT17 --EVAL_INTERVAL {interval}")
     else:
         raise NotImplementedError(f"Do not support this Dataset name: {dataset_name}")
 

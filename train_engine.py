@@ -214,7 +214,9 @@ def eval_model(config: dict, model: MeMOTR, outputs_dir: str, val_split: str, wr
             data_dir = os.path.join(data_root, "MOT15")
             val_split = "train"
             benchmark = "MOT15"
-        data_split_dir = os.path.join(data_dir, "images", "train")
+            data_split_dir = os.path.join(data_dir, "images", "train")
+        else:
+            data_split_dir = os.path.join(data_dir, "images", val_split)
     else:
         raise NotImplementedError(f"Eval DOES NOT support dataset '{dataset_name}'")
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 # JOB_NAME=eval_memotr_dancetrack
-TIME=2:00:00  # TIME=(24:00:00)
+TIME=2:30:00  # TIME=(24:00:00)
 GPUS=2
 CPUS=16
 MEM_PER_CPU=22000
@@ -134,7 +134,7 @@ fi
 PARTITION=gpu20  # PARTITION=(gpu16 | gpu20 | gpu22) 
 for DET_SCORE_THRESH in 0.5; do
 for TRACK_SCORE_THRESH in 0.5; do
-for MISS_TOLERANCE in 45 50; do
+for MISS_TOLERANCE in 55; do
      EXP_NAME=det_${DET_SCORE_THRESH}_track_${TRACK_SCORE_THRESH}_miss_${MISS_TOLERANCE}_interval_${EVAL_INTERVAL}
      ID=$(sbatch \
           --parsable \
@@ -163,3 +163,38 @@ for MISS_TOLERANCE in 45 50; do
 done
 done
 done
+
+
+# MODEL_NAME=checkpoint_11.pth
+# PARTITION=gpu20  # PARTITION=(gpu16 | gpu20 | gpu22) 
+# for DET_SCORE_THRESH in 0.5; do
+# for TRACK_SCORE_THRESH in 0.5; do
+# for MISS_TOLERANCE in 30 35 40; do
+#      EXP_NAME=ckpt_11_det_${DET_SCORE_THRESH}_track_${TRACK_SCORE_THRESH}_miss_${MISS_TOLERANCE}_interval_${EVAL_INTERVAL}
+#      ID=$(sbatch \
+#           --parsable \
+#           -t ${TIME} \
+#           --job-name=${EXP_NAME} \
+#           -p ${PARTITION} \
+#           --gres=gpu:${GPUS_PER_NODE} \
+#           -e resources/errors/%j.log \
+#           -o resources/outputs/%j.log \
+#           ${SBATCH_ARGS} \
+#           ${CMD} \
+#           ${GPUS} \
+#                --mode submit \
+#                --data-root ${DATA_ROOT} \
+#                --submit-dir ${OUT_DIR} \
+#                --submit-model ${MODEL_NAME} \
+#                --submit-data-split test \
+#                --config-path ${CONFIG} \
+#                --exp-name ${EXP_NAME} \
+#                --eval-interval ${EVAL_INTERVAL}  \
+#                --det-score-thresh ${DET_SCORE_THRESH} \
+#                --track-score-thresh ${TRACK_SCORE_THRESH} \
+#                --result-score-thresh ${TRACK_SCORE_THRESH} \
+#                --update-thresh ${TRACK_SCORE_THRESH}\
+#                --miss-tolerance ${MISS_TOLERANCE})
+# done
+# done
+# done

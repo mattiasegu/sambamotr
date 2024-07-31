@@ -249,12 +249,23 @@ def submit(config: dict):
         model=model,
         path=path.join(config["SUBMIT_DIR"], config["SUBMIT_MODEL"])
     )
+    data_dir = os.path.join(data_root, dataset_name)
     if dataset_name == "DanceTrack" or dataset_name == "SportsMOT":
-        data_split_dir = path.join(data_root, dataset_name, dataset_split)
+        data_split_dir = os.path.join(data_dir, dataset_split)
+    elif dataset_name == "BFT":
+        data_split_dir = os.path.join(data_dir, dataset_split)
     elif dataset_name == "BDD100K":
-        data_split_dir = path.join(data_root, dataset_name, "images/track/", dataset_split)
+        data_split_dir = os.path.join(data_dir, "images/track/", dataset_split)
+    elif "MOT17" in dataset_name:
+        if "mot15" in dataset_split:
+            data_dir = os.path.join(data_root, "MOT15")
+            dataset_split = "train"
+            data_split_dir = os.path.join(data_dir, "images", "train")
+        else:
+            data_split_dir = os.path.join(data_dir, "images", dataset_split)
     else:
-        data_split_dir = path.join(data_root, dataset_name, "images", dataset_split)
+        raise NotImplementedError(f"Eval DOES NOT support dataset '{dataset_name}'")
+    
     seq_names = os.listdir(data_split_dir)
 
     if is_distributed():
