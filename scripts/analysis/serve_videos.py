@@ -8,8 +8,10 @@ app = Flask(__name__)
 # Configuration
 EXP_DIR = "pretrained/sambamotr/sportsmot/sambamotr_residual_masking_sync_longer_sched2_lr_0.0002/val/det_0.5_track_0.5_miss_30_interval_1/checkpoint_17_tracker/"
 CSV_PATH = osp.join(EXP_DIR, "sorted_pedestrian_detailed.csv")
-VIDEO_DIR = '/BS/diffusion-track/work/sambamotr/outputs/vis/SportsMOT/val'
-TOP_K = 10
+# VIDEO_DIR = '/BS/diffusion-track/work/sambamotr/outputs/vis/SportsMOT/val'
+VIDEO_DIR = '/BS/diffusion-track/work/sambamotr/outputs/vis/SportsMOT/gts/val'
+TOP_K = 44
+# TOP_K = 10
 
 # Read and parse the CSV
 df = pd.read_csv(CSV_PATH)

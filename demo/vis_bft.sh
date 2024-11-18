@@ -10,6 +10,23 @@
 #     --no_timestamp  \
 #     --fps=25
 
+# python demo/demo.py \
+#     /BS/diffusion-track/nobackup/data/mot/DanceTrack/test/dancetrack0054/img1/ 
+#     outputs/vis/DanceTrack/test/dancetrack0054/ 
+#     pretrained/sambamotr/dancetrack/sambamotr_residual_masking_sync_longer_lr_0.0002/train/config.yaml 
+#     pretrained/sambamotr/dancetrack/sambamotr_residual_masking_sync_longer_lr_0.0002/checkpoint_14.pth 
+#     --no_text 
+#     --no_timestamp 
+#     --fps 20
+python demo/demo.py \
+    /BS/diffusion-track/nobackup/data/mot/BFT/test/An1002/ \
+    outputs/vis/BFT/test/An1002 \
+    pretrained/sambamotr/bft/sambamotr_residual_masking_sync_longer_lr_0.0002/train/config.yaml \
+    pretrained/sambamotr/bft/sambamotr_residual_masking_sync_longer_lr_0.0002/checkpoint_19.pth \
+    --no_text  \
+    --no_timestamp  \
+    --fps=25
+
 # Check if the correct number of arguments is provided
 if [ "$#" -ne 7 ]; then
     echo "Usage: $0 <input_base_dir> <output_base_dir> <config_path> <model_path> [--no_text] [--no_timestamp] [--fps]"

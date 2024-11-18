@@ -62,18 +62,6 @@ def play_video(video_path):
     video.release()
     cv2.destroyAllWindows()
 
-def process_image(image):
-    ori_image = image.copy()
-    h, w = image.shape[:2]
-    scale = 800 / min(h, w)
-    if max(h, w) * scale > 1536:
-        scale = 1536 / max(h, w)
-    target_h = int(h * scale)
-    target_w = int(w * scale)
-    image = cv2.resize(image, (target_w, target_h))
-    image = F.normalize(F.to_tensor(image), [0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-    return image, ori_image
-
 def filter_by_score(tracks: TrackInstances, thresh: float = 0.7):
     keep = torch.max(tracks.scores, dim=-1).values > thresh
     return tracks[keep]
@@ -83,17 +71,21 @@ def filter_by_area(tracks: TrackInstances, thresh: int = 100):
     keep = tracks.area > thresh
     return tracks[keep]
 
-def get_color(idx):
-    idx = idx * 3
-    color = ((37 * idx) % 255, (17 * idx) % 255, (29 * idx) % 255)
-    return color
+def get_color(idx, num_colors):
+    """Generate a brighter rainbow color based on the index."""
+    delta_bright = 25
+    ratio = idx / num_colors
+    r = int(min(255, 255 * (1 - ratio) + delta_bright))  # Increase brightness
+    g = int(min(255, 255 * (ratio * 2) if ratio < 0.5 else 255 * (1 - (ratio - 0.5) * 2) + delta_bright))  # Increase brightness
+    b = int(min(255, 255 * ratio + delta_bright))  # Increase brightness
+    return (r, g, b)
 
-def plot_tracking(image, tlwhs, obj_ids, scores=None, frame_id=0, fps=0., ids2=None, show_text=True, show_ids=True, trajectories=None, k=None):
+def plot_tracking(image, tlwhs, obj_ids, scores=None, frame_id=0, fps=0., ids2=None, show_text=True, show_ids=True, trajectories=None, k=None, thickness=2, smooth_trajectory=None):
     im = np.ascontiguousarray(np.copy(image))
     im_h, im_w = im.shape[:2]
     text_scale = 2
     text_thickness = 2
-    line_thickness = 3
+    line_thickness = thickness
 
     if show_text:
         cv2.putText(im, 'frame: %d fps: %.2f num: %d' % (frame_id, fps, len(tlwhs)),
@@ -103,28 +95,41 @@ def plot_tracking(image, tlwhs, obj_ids, scores=None, frame_id=0, fps=0., ids2=N
     for i, tlwh in enumerate(tlwhs):
         x1, y1, w, h = tlwh
         intbox = tuple(map(int, (x1, y1, x1 + w, y1 + h)))
+        intbox = (int(x1), int(y1), int(x1 + w), int(y1 + h))
         obj_id = int(obj_ids[i])
         id_text = '{}'.format(int(obj_id))
-        color = get_color(abs(obj_id))
-        cv2.rectangle(im, intbox[0:2], intbox[2:4], color=color, thickness=line_thickness)
-        cv2.putText(im, id_text, (intbox[0], intbox[1]-12), cv2.FONT_HERSHEY_PLAIN,
-                    text_scale, color, thickness=text_thickness)
+        color = get_color(abs(obj_id), len(tlwhs))  # Pass the number of tracklets for rainbow colors
+        cv2.rectangle(im, intbox[0:2], intbox[2:4], color=color, thickness=line_thickness)  # Use the thickness parameter
+
+        # Draw the center of the bounding box as a dot
+        center_x = int(x1 + w / 2)
+        center_y = int(y1 + h / 2)
+        cv2.circle(im, (center_x, center_y), radius=line_thickness*2, color=color, thickness=-1)  # Draw filled circle
+
+        if show_ids:
+            cv2.putText(im, id_text, (intbox[0], intbox[1]-12), cv2.FONT_HERSHEY_PLAIN,
+                        text_scale, color, thickness=text_thickness)
         if scores is not None and show_text:
             text = 'score: {:.2f}'.format(scores[i])
             cv2.putText(im, text, (intbox[0], intbox[1]-24), cv2.FONT_HERSHEY_PLAIN,
                         text_scale, color, thickness=text_thickness)
         if show_ids and ids2 is not None:
-            color2 = get_color(abs(int(ids2[i])))
+            color2 = get_color(abs(int(ids2[i])), len(tlwhs))
             cv2.putText(im, str(ids2[i]), (intbox[0], intbox[1] - 36),
                         cv2.FONT_HERSHEY_PLAIN, text_scale, color2, thickness=text_thickness)
         
         # Draw trajectory for the last k frames
         if trajectories is not None and obj_id in trajectories:
-            recent_traj = [t[1] for t in trajectories[obj_id] if frame_id - k < t[0] <= frame_id]  # Adjusted condition
+            recent_traj = [t[1] for t in trajectories[obj_id] if frame_id - k <= t[0] < frame_id]  # Adjusted condition
+            
+            # Smooth the recent trajectory if the option is enabled
+            if smooth_trajectory is not None:
+                recent_traj = exponential_moving_average(recent_traj, alpha=0.1)  # Use the integer value for n
+            
             for j in range(len(recent_traj) - 1):
                 start = recent_traj[j]
                 end = recent_traj[j + 1]
-                cv2.line(im, (int(start[0]), int(start[1])), (int(end[0]), int(end[1])), color=color, thickness=2)
+                cv2.line(im, (int(start[0]), int(start[1])), (int(end[0]), int(end[1])), color=color, thickness=line_thickness)
 
     return im
 
@@ -151,10 +156,31 @@ def read_ground_truth(gt_path: str):
                 centroid = [(x1 + w / 2), (y1 + h / 2)]  # Calculate centroid
                 if obj_id not in trajectories:
                     trajectories[obj_id] = []
-                trajectories[obj_id].append((frame_id, centroid))  # Store frame_id and centroid
+                trajectories[obj_id].append((frame_id, centroid, [x1, y1, w, h]))  # Store frame_id and centroid
             except ValueError:
                 continue  # Skip lines with invalid data
     return trajectories
+
+def exponential_moving_average(trajectory, alpha=0.1):
+    smoothed_trajectory = [trajectory[-1]]  # Start with the last point
+    current_average = trajectory[-1]  # Initialize with the last point
+
+    # Iterate backward through the trajectory
+    for point in reversed(trajectory[:-1]):  # Exclude the last point since it's already added
+        # Unpack the point into x and y coordinates
+        x, y = point
+        
+        # Update the current average for both x and y
+        current_average = (
+            (1 - alpha) * current_average[0] + alpha * x,
+            (1 - alpha) * current_average[1] + alpha * y
+        )
+        
+        smoothed_trajectory.append(current_average)
+
+    # Reverse the smoothed trajectory to maintain the original order
+    smoothed_trajectory.reverse()
+    return smoothed_trajectory
 
 def demo_processing(
         input_path: str,
@@ -164,8 +190,10 @@ def demo_processing(
         fps: int = 30,
         show_ids: bool = True,
         gt_path: Optional[str] = None,
-        k: int = 10,  # Add this parameter
-        save_frames: bool = False,  # New parameter to save individual frames
+        k: int = 10,
+        save_frames: bool = False,
+        thickness: int = 2,
+        smooth_trajectory: Optional[int] = None,  # Change to Optional[int]
 ):
     # Read ground truth if provided
     trajectories = {}
@@ -217,11 +245,11 @@ def demo_processing(
             for t in traj:
                 if t[0] == frame_id:  # Check if this trajectory is for the current frame
                     centroid = t[1]
-                    online_tlwhs.append([centroid[0] - 78, centroid[1] - 96, 156, 192])  # Example bounding box
+                    online_tlwhs.append(t[2])  # Example bounding box
                     online_ids.append(obj_id)
-
+        
         online_im = plot_tracking(
-            ori_image, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=fps, show_text=show_text, show_ids=show_ids, trajectories=trajectories, k=k  # Example value for k
+            ori_image, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=fps, show_text=show_text, show_ids=show_ids, trajectories=trajectories, k=k, thickness=thickness, smooth_trajectory=smooth_trajectory
         )
         vid_writer.write(online_im)
 
@@ -244,7 +272,9 @@ def main():
     parser.add_argument('--no_ids', action='store_true', help="Remove IDs from the video.")
     parser.add_argument('--k', type=int, default=10, help="Number of recent frames to visualize for trajectories.")
     parser.add_argument('--save_frames', action='store_true', help="Save individual frames as images.")
-    parser.add_argument('--create_gif', action='store_true', help="Create a GIF from the output video.")  # New argument
+    parser.add_argument('--create_gif', action='store_true', help="Create a GIF from the output video.")
+    parser.add_argument('--thickness', type=int, default=2, help="Thickness of the bounding boxes for tracklets.")
+    parser.add_argument('--smooth_trajectory', type=int, default=0, help="Number of recent frames to use for smoothing. Pass 0 to disable smoothing.")  # Change to integer
     
     args = parser.parse_args()
 
@@ -257,8 +287,10 @@ def main():
         fps=args.fps,
         show_ids=not args.no_ids,
         gt_path=args.gt_path,
-        k=args.k,  # Pass the k value
-        save_frames=args.save_frames,  # Pass the new parameter
+        k=args.k,
+        save_frames=args.save_frames,
+        thickness=args.thickness,
+        smooth_trajectory=args.smooth_trajectory if args.smooth_trajectory > 0 else None,  # Pass n or None
     )
 
     # Define the output paths
