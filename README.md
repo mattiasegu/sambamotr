@@ -47,6 +47,7 @@
 
 ## News :fire:
 
+- 2025.03.31: We’re releasing SambaMOTR's weights based on the stronger DAB-D-DETR detector.
 - 2025.03.26: We’re excited to release the main code and checkpoints!
 - 2025.01.22: SambaMOTR has been accepted to ICLR 2025 as a **spotlight** paper! :partying_face: Looking forward to seeing you in Singapore. 
 
@@ -173,13 +174,24 @@ The pretrained checkpoints and output files for SambaMOTR are stored at the foll
 
 You can use this link to download the necessary files, such as model weights and outputs, to reproduce the results or use the tracker for your own tasks.
 
-### Results
+### Results (DanceTrack)
 
-| Dataset      | Method                      | HOTA  | AssA  | DetA  | IDF1  | MOTA  | Checkpoint                                                  | Output                                                                 |
-|--------------|-----------------------------|-------|-------|-------|-------|-------|-------------------------------------------------------------|------------------------------------------------------------------------|
-| DanceTrack   | SambaMOTR (Deformable DETR) | 67.2  | 57.7  | 78.6  | 71.3  | 88.1  | [Hugging Face](https://huggingface.co/mattiasegu/sambamotr/blob/main/sambamotr_pretrained/dancetrack/def_detr/sambamotr_dancetrack.pth) | [Hugging Face](https://huggingface.co/mattiasegu/sambamotr/tree/main/sambamotr_pretrained/dancetrack/def_detr/test/tracker)          |
-| SportsMOT    | SambaMOTR (Deformable DETR) | 70.5  | 60.6  | 82.2  | 73.3  | 90.4  | [Hugging Face](https://huggingface.co/mattiasegu/sambamotr/blob/main/sambamotr_pretrained/sportsmot/def_detr/sambamotr_sportsmot.pth) | [Hugging Face](https://huggingface.co/mattiasegu/sambamotr/tree/main/sambamotr_pretrained/sportsmot/def_detr/test/tracker)           |
-| BFT          | SambaMOTR (Deformable DETR) | 69.6  | 74.2  | 65.4  | 81.2  | 70.2  | [Hugging Face](https://huggingface.co/mattiasegu/sambamotr/blob/main/sambamotr_pretrained/bft/def_detr/sambamotr_bft.pth)         | [Hugging Face](https://huggingface.co/mattiasegu/sambamotr/tree/main/sambamotr_pretrained/bft/def_detr/test/tracker)                 |
+| Dataset      | Method                      | HOTA  | AssA  | DetA  | IDF1  | MOTA  | Cfg                                                                 | Weights                                                                                                         | Output                                                                 |
+|--------------|-----------------------------|-------|-------|-------|-------|-------|---------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
+| DanceTrack   | SambaMOTR (Deformable DETR) | 67.2  | 57.7  | 78.6  | 71.3  | 88.1  | [Config](configs/sambamotr/dancetrack/def_detr/train_residual_masking_sync_longer.yaml) | [Hugging Face](https://huggingface.co/mattiasegu/sambamotr/blob/main/sambamotr_pretrained/dancetrack/def_detr/sambamotr_dancetrack.pth) | [Hugging Face](https://huggingface.co/mattiasegu/sambamotr/tree/main/sambamotr_pretrained/dancetrack/def_detr/test/tracker)          |
+|              | SambaMOTR (DAB-D-DETR)                 | 69.0  | 60.0  | 79.5  | 74.2  | 89.1  | [Config](configs/sambamotr/dancetrack/dab_detr/train_residual_masking_sync_longer.yaml) | [Hugging Face](https://huggingface.co/mattiasegu/sambamotr/blob/main/sambamotr_pretrained/dancetrack/dab_detr/sambamotr_dancetrack.pth) | [Hugging Face](https://huggingface.co/mattiasegu/sambamotr/tree/main/sambamotr_pretrained/dancetrack/dab_detr/test/tracker)          |
+
+### Results (SportsMOT)
+| Dataset      | Method                      | HOTA  | AssA  | DetA  | IDF1  | MOTA  | Cfg                                                                 | Weights                                                                                                         | Output                                                                 |
+|--------------|-----------------------------|-------|-------|-------|-------|-------|---------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
+| SportsMOT    | SambaMOTR (Deformable DETR) | 70.5  | 60.6  | 82.2  | 73.3  | 90.4  | [Config](configs/sambamotr/sportsmot/def_detr/train_residual_masking_sync_longer.yaml)  | [Hugging Face](https://huggingface.co/mattiasegu/sambamotr/blob/main/sambamotr_pretrained/sportsmot/def_detr/sambamotr_sportsmot.pth)  | [Hugging Face](https://huggingface.co/mattiasegu/sambamotr/tree/main/sambamotr_pretrained/sportsmot/def_detr/test/tracker)           |
+|              | SambaMOTR (DAB-D-DETR)                 | 72.1  | 62.5  | 83.4  | 74.8  | 91.9  | [Config](configs/sambamotr/sportsmot/dab_detr/train_residual_masking_sync_longer.yaml)  | [Hugging Face](https://huggingface.co/mattiasegu/sambamotr/blob/main/sambamotr_pretrained/sportsmot/dab_detr/sambamotr_sportsmot.pth)  | [Hugging Face](https://huggingface.co/mattiasegu/sambamotr/tree/main/sambamotr_pretrained/sportsmot/dab_detr/test/tracker)           |
+
+### Results (BFT)
+| Dataset      | Method                      | HOTA  | AssA  | DetA  | IDF1  | MOTA  | Cfg                                                                 | Weights                                                                                                         | Output                                                                 |
+|--------------|-----------------------------|-------|-------|-------|-------|-------|---------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
+| BFT          | SambaMOTR (Deformable DETR) | 69.6  | 74.2  | 65.4  | 81.2  | 70.2  | [Config](configs/sambamotr/bft/def_detr/train_residual_masking_sync_longer.yaml)        | [Hugging Face](https://huggingface.co/mattiasegu/sambamotr/blob/main/sambamotr_pretrained/bft/def_detr/sambamotr_bft.pth)              | [Hugging Face](https://huggingface.co/mattiasegu/sambamotr/tree/main/sambamotr_pretrained/bft/def_detr/test/tracker)                 |
+|              | SambaMOTR (DAB-D-DETR)                 | 72.1  | 75.4  | 69.2  | 84.6  | 76.4  | [Config](configs/sambamotr/bft/dab_detr/train_residual_masking_sync_longer.yaml)        | [Hugging Face](https://huggingface.co/mattiasegu/sambamotr/blob/main/sambamotr_pretrained/bft/dab_detr/sambamotr_bft.pth)              | [Hugging Face](https://huggingface.co/mattiasegu/sambamotr/tree/main/sambamotr_pretrained/bft/dab_detr/test/tracker)                 |
 
 ## Contributions
 
